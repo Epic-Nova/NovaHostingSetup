@@ -5,6 +5,7 @@ LOGFILE=access_table
 
 while IFS= read -r line; do
 iptables -D INPUT -p tcp -s 0.0.0.0/0 --dport 22 -j DROP
+iptables -D INPUT -s localhost -j ACCEPT
 iptables -D INPUT -p tcp -s $line --dport 22 -j ACCEPT
 
 sed -i "/$line/d" $LOGFILE
@@ -20,5 +21,6 @@ echo "$i" >> $LOGFILE
 done
 
 iptables -A INPUT -p tcp -s 0.0.0.0/0 --dport 22 -j DROP
+iptables -I INPUT -s localhost -j ACCEPT
 iptables-save
 echo "Updated SSH Access Table"
