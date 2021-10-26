@@ -13,7 +13,7 @@ jumpto $start
 
 start:
 
-port=$(whiptail --inputbox "Enter an Port you want to Block (Comma separated and without spaces)" 8 39 21 --title "Epic Nova Installer" 3>&1 1>&2 2>&3)
+port=$(whiptail --inputbox "Enter an Port you want to Block (Comma separated and without spaces)" 8 39 22 --title "Epic Nova Installer" 3>&1 1>&2 2>&3)
 
 protocol=$(whiptail --inputbox "Enter the protocol on which you want to block this port" 8 39 tcp --title "Epic Nova Installer" 3>&1 1>&2 2>&3)
 
