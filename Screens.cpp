@@ -45,7 +45,7 @@ void Screens::InstallPackages(int SelectedServerType)
     case 1:
         break;
     case 2:
-        system(" apt-get install curl gnupg2 wget unzip -y");
+        system("apt-get install curl gnupg2 wget unzip -y");
         system("curl -fsSL https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add -");
         system("echo 'deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse' | tee /etc/apt/sources.list.d/mongodb-org-4.4.lis4");
 
@@ -53,7 +53,7 @@ void Screens::InstallPackages(int SelectedServerType)
         
         Nova.HandlePackage("mongodb-server", true);
         system("systemctl start mongodb");
-        system("systemctl enable mongodb");
+        system(" systemctl enable mongodb");
         break;
     case 3:
 
@@ -67,7 +67,7 @@ void Screens::InstallPackages(int SelectedServerType)
         
         Nova.HandlePackage("pritunl", true);
         system("systemctl start pritunl");
-        system("systemctl enable pritunl");
+        system(" systemctl enable pritunl");
     
         system("screen -S Pritunl");
         system("pritunl");

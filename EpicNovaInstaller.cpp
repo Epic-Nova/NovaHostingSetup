@@ -5,6 +5,14 @@ using namespace std;
 
 int main()
 {
+    //get userid 
+    int uid  = getuid();
+    //check if user isn't root root's uid = 0
+    if(uid != 0){
+        //print non root error and quit the programm
+        system("whiptail --title 'Epic Nova Hosting Setup' --msgbox 'You need to be root to use this installer' 10 60"); 
+        return 0;
+    }
     Screens ScreenList;
     ScreenList.BeginScreenLifecircle();
 }
