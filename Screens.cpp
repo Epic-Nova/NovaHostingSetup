@@ -16,6 +16,7 @@ void Screens::ExecuteSelectedServerTypeInstallation()
     system("cp -R ./content/* /etc/nova");
 
     int i, ret = system("bash /etc/nova/scripts/setup/screens/server_type.bash");
+    
     i=WEXITSTATUS(ret);
 
     system("bash /etc/nova/scripts/setup/screens/ip_block.bash");

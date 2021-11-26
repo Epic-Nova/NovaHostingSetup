@@ -10,3 +10,4 @@
 #include "array"
 #include "cstdio"
 #include <unistd.h>
+#include <curl/curl.h>
