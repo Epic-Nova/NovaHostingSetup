@@ -1,16 +1,34 @@
-installer: EpicNovaInstaller.o Screens.o build
-	g++ -lcurl build/EpicNovaInstaller.o  build/Screens.o -o build/installer 
+include Utilities/Configurations/Custom.mk
+include Utilities/Configurations/Defaults.mk
+include Utilities/Configurations/${BUILD_CONFIGURATION}.mk
 
+.SUFFIXES:
+.DEFAULT_GOAL := all
 
-EpicNovaInstaller.o: EpicNovaInstaller.cpp EpicNovaInstaller.h build
-	g++ -c -lcurl EpicNovaInstaller.cpp -o build/EpicNovaInstaller.o 
+.PHONY: all
 
-Screens.o: Screens.cpp Screens.h IncludeFile.h build
-	g++ -c -lcurl Screens.cpp -o build/Screens.o 
+SOURCE_FILES := $(shell find $(SOURCE_DIRECTORY) -name "*.cpp")
+OBJECT_FILES := $(patsubst $(SOURCE_DIRECTORY)/%.cpp, $(BUILD_OBJECT_DIRECTORY)/%.o, $(SOURCE_FILES))
+DEPENDENCY_FILES := $(patsubst $(SOURCE_DIRECTORY)/%.cpp, $(BUILD_OBJECT_DIRECTORY)/%.d, $(SOURCE_FILES))
 
+all: $(OBJECT_FILES)
+	@echo "Linking object files..."
+	@mkdir -p $(BUILD_DIRECTORY)
+	@$(BUILD_TOOLCHAIN) $(BUILD_FLAGS) $(BUILD_OPTIMSATIONS) -o $(BUILD_DIRECTORY)/NovaHostingSetup $(OBJECT_FILES) $(THIRD_PARTY_LIBRARIES)
 
-build: 
-	mkdir build
+$(BUILD_OBJECT_DIRECTORY)/%.o: $(SOURCE_DIRECTORY)/%.cpp
+	@echo "Compiling file: $<"
+	@mkdir -p $(dir $@)
+	@$(BUILD_TOOLCHAIN) $(BUILD_FLAGS) $(BUILD_OPTIMSATIONS) -c $< -o $@
+
+-include $(DEPENDENCY_FILES)
+
+$(BUILD_OBJECT_DIRECTORY)/%.d: $(SOURCE_DIRECTORY)/%.cpp
+	@mkdir -p $(dir $@)
+	@$(BUILD_TOOLCHAIN) $(BUILD_FLAGS) $(BUILD_OPTIMSATIONS) -MM $< -MT $(patsubst $(SOURCE_DIRECTORY)/%.cpp, $(BUILD_OBJECT_DIRECTORY)/%.o, $<) -MF $@
 
 clean:
-	rm -r build
+	@echo "Cleaning object files..."
+	@rm -rf $(BUILD_OBJECT_DIRECTORY)
+	@echo "Cleaning binaries..."
+	@rm -rf $(BUILD_DIRECTORY)

@@ -1,0 +1,20 @@
+#include <iostream>
+#include <string>
+#include <memory>
+#include <utility>
+#include <algorithm>
+#include <functional>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <map>
+#include <set>
+#include <array>
+#include <cstdlib>
+#include <stdio.h>
+
+//Third Party Includes
+#include "connection.h"
+#include "restclient.h"
