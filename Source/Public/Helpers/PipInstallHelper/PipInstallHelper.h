@@ -1,3 +1,6 @@
+/// @file PipInstallHelper.h
+/// @brief Manages pip installation and Python-package handling.
+
 #pragma once
 
 #include "Helpers/BaseHelper.h"

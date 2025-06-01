@@ -18,13 +18,16 @@ BUILD_FLAGS									?=		  -std=c++17 -Wall -g#			  # Build flags											  			
 BUILD_OPTIMSATIONS							?=		  -O3#							  # Build optimsations											  				  #
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
+#This adds the Build Configuration as macro for the compiler
+BUILD_FLAGS += -DBUILD_CONFIGURATION=\"${BUILD_CONFIGURATION}\"
+
 #This adds the source public directory to the include paths
 PUBLIC_DIRECTORY = ${SOURCE_DIRECTORY}/Public
 BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}
 BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}/Core
-BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}/Core/FileStreams
 BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}/Menus
 BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}/Helpers
+BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}/Utils
 
 #This adds the ThirdParty include directory to the include paths
 UNAME_S := $(shell uname -s)

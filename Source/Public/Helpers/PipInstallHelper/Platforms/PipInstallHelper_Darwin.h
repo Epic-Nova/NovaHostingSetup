@@ -29,6 +29,8 @@ namespace Core::Helpers
         // This function checks if the requirements for pip are met, like if brew is installed on macOS or if python is installed on Windows
         virtual bool HasMetRequirements() const override;
 
+        virtual bool HasPipInstalled() const override;
+
         // This function installs a package using pip
         virtual void InstallPackage(const std::string& packageName, std::function<void(std::string)> callback) override;
 
@@ -36,5 +38,8 @@ namespace Core::Helpers
         // Add any macOS specific members here if needed
     };
 }
+
+/// @file PipInstallHelper_Darwin.h
+/// @brief macOS-specific pip installation helper.
 
 #endif // __APPLE__

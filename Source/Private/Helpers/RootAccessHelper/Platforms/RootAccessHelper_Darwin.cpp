@@ -1,3 +1,6 @@
+/// @file RootAccessHelper_Darwin.cpp
+/// @brief macOS-specific root/elevated access implementation.
+
 #ifdef __APPLE__
 
 #include "Helpers/RootAccessHelper/Platforms/RootAccessHelper_Darwin.h"
@@ -15,6 +18,8 @@ namespace Core::Helpers
         if(bIsInitialized) 
         {
             NOVA_LOG("RootAccessHelper_Darwin is already initialized", Core::LogType::Warning);
+            FireInstallCallback("RootAccessHelper_Darwin is already initialized");
+
             return;
         }
         
@@ -22,11 +27,14 @@ namespace Core::Helpers
         if (status != errAuthorizationSuccess) 
         {
             NOVA_LOG("Failed to create authorization reference", Core::LogType::Error);
+            FireInstallCallback("Failed to create authorization reference");
             return;
         }
         
         bIsInitialized = true;
         NOVA_LOG("RootAccessHelper_Darwin initialized successfully", Core::LogType::Debug);
+        FireInstallCallback("RootAccessHelper_Darwin has been initialized successfully");
+        bHasElevatedPrivileges = false; // Initially, we do not have elevated privileges
     }
 
     void RootAccessHelper_Darwin::Shutdown()
@@ -40,6 +48,7 @@ namespace Core::Helpers
         bIsInitialized = false;
         bHasElevatedPrivileges = false;
         NOVA_LOG("RootAccessHelper_Darwin shutdown completed", Core::LogType::Debug);
+        FireInstallCallback("RootAccessHelper_Darwin has been shut down");
     }
 
     void RootAccessHelper_Darwin::Execute(std::function<bool()> callback)
@@ -47,6 +56,7 @@ namespace Core::Helpers
         if (!bIsInitialized) 
         {
             NOVA_LOG("RootAccessHelper_Darwin not initialized", Core::LogType::Error);
+            FireInstallCallback("RootAccessHelper_Darwin not initialized");
             return;
         }
 
@@ -57,29 +67,23 @@ namespace Core::Helpers
         OSStatus status = AuthorizationCopyRights(authRef, &authRights, NULL, 
                                                   kAuthorizationFlagDefaults | 
                                                   kAuthorizationFlagInteractionAllowed | 
-                                                  kAuthorizationFlagPreAuthorize | 
-                                                  kAuthorizationFlagExtendRights, 
+                                                  kAuthorizationFlagPreAuthorize |
+                                                  kAuthorizationFlagExtendRights,
                                                   NULL);
         
         if (status == errAuthorizationSuccess) 
         {
             bHasElevatedPrivileges = true;
-            NOVA_LOG("Root access granted successfully", Core::LogType::Debug);
-            
-            // Execute the callback with elevated privileges
-            if (callback) 
-            {
-                bool result = callback();
-                if (!result) {
-                    NOVA_LOG("Callback execution failed", Core::LogType::Warning);
-                }
-            }
+            NOVA_LOG("Elevated privileges granted", Core::LogType::Debug);
+            FireInstallCallback("Elevated privileges granted");
+            callback();
         } 
         else 
         {
-            NOVA_LOG("Failed to obtain root access", Core::LogType::Error);
+            NOVA_LOG("Failed to obtain elevated privileges", Core::LogType::Error);
+            FireInstallCallback("Failed to obtain elevated privileges");
             bHasElevatedPrivileges = false;
-        }    
+        }
     }
 
     void RootAccessHelper_Darwin::Reset()
@@ -94,13 +98,15 @@ namespace Core::Helpers
             if (status != errAuthorizationSuccess) 
             {
                 NOVA_LOG("Failed to recreate authorization reference during reset", Core::LogType::Error);
+                FireInstallCallback("Failed to recreate authorization reference during reset");
                 authRef = NULL;
                 bIsInitialized = false;
             }
         }
         
         bHasElevatedPrivileges = false;
-        NOVA_LOG("RootAccessHelper_Darwin reset completed", Core::LogType::Debug);    
+        NOVA_LOG("RootAccessHelper_Darwin reset completed", Core::LogType::Debug);
+        FireInstallCallback("RootAccessHelper_Darwin has been reset");    
     }
 
     void RootAccessHelper_Darwin::Abort()
@@ -113,7 +119,8 @@ namespace Core::Helpers
         
         bHasElevatedPrivileges = false;
         bIsInitialized = false;
-        NOVA_LOG("RootAccessHelper_Darwin aborted", Core::LogType::Debug);    
+        NOVA_LOG("RootAccessHelper_Darwin aborted", Core::LogType::Debug);
+        FireInstallCallback("RootAccessHelper_Darwin has been aborted");    
     }
 
     bool RootAccessHelper_Darwin::HasRootAccess() const
@@ -123,8 +130,9 @@ namespace Core::Helpers
 
     bool RootAccessHelper_Darwin::RequestElevatedPrivileges()
     {
-        Execute([]() {
+        Execute([this]() {
             NOVA_LOG("Requesting elevated privileges...", Core::LogType::Log);
+            FireInstallCallback("Requesting elevated privileges...");
             return true; 
         });
         return bHasElevatedPrivileges;
@@ -140,28 +148,37 @@ namespace Core::Helpers
         if (!bHasElevatedPrivileges && !RequestElevatedPrivileges()) 
         {
             NOVA_LOG("Cannot run command as root: no elevated privileges", Core::LogType::Error);
+            FireInstallCallback("Cannot run command as root: no elevated privileges");
             return false;
         }
-                
-        AuthorizationItem authItem = { kSMRightBlessPrivilegedHelper, 0, NULL, 0 };
-        AuthorizationRights authRights = { 1, &authItem };
 
-        OSStatus status = AuthorizationCopyRights(authRef, &authRights, 
-                                   kAuthorizationEmptyEnvironment,
-                                   kAuthorizationFlagDefaults | 
-                                   kAuthorizationFlagInteractionAllowed |
-                                   kAuthorizationFlagPreAuthorize |
-                                   kAuthorizationFlagExtendRights,
-                                   NULL);
+        NOVA_LOG(("Executing command: " + command).c_str(), Core::LogType::Debug);
+        FireInstallCallback("Executing command: " + command);
+
+        // Suppress output to prevent GUI interference
+        std::string fullCommand = command + " > /dev/null 2>&1";
+        FILE* pipe = popen(fullCommand.c_str(), "r");
         
-        if (status == errAuthorizationSuccess) 
+        if (!pipe) 
         {
-            NOVA_LOG("Command executed successfully with root privileges", Core::LogType::Debug);
+            NOVA_LOG("Failed to open pipe for command execution", Core::LogType::Error);
+            FireInstallCallback("Failed to open pipe for command execution");
+            return false;
+        }
+
+        // Since output is redirected, we'll just wait for completion
+        int returnCode = pclose(pipe);
+        
+        if (returnCode == 0) 
+        {
+            NOVA_LOG("Command executed successfully", Core::LogType::Debug);
+            FireInstallCallback("Command executed successfully");
             return true;
         } 
         else 
         {
-            NOVA_LOG("Failed to execute command with root privileges", Core::LogType::Error);
+            NOVA_LOG(("Command failed with return code: " + std::to_string(returnCode)).c_str(), Core::LogType::Error);
+            FireInstallCallback("Command failed with return code: " + std::to_string(returnCode));
             return false;
         }
     }

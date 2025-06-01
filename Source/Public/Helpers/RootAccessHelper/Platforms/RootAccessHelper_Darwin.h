@@ -1,3 +1,6 @@
+/// @file RootAccessHelper_Darwin.h
+/// @brief macOS-specific root-access helper.
+
 #pragma once
 
 #ifdef __APPLE__

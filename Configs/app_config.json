@@ -1,0 +1,12 @@
+{
+    "cmdOptions": {
+        "clearContent": false,
+        "noRoot": true,
+        "verbose": true
+    },
+    "mkdocsProjectPath": "fidjflkdjsjdkfsf",
+    "requestRootForBrew": true,
+    "requestRootForPip": true,
+    "requestRootForVenv": true,
+    "scrollableLogAlwaysVisible": true
+}

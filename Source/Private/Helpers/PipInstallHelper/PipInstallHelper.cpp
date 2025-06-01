@@ -1,3 +1,6 @@
+/// @file PipInstallHelper.cpp
+/// @brief Pip install helper platform factory.
+
 #include "Helpers/PipInstallHelper/PipInstallHelper.h"
 
 #ifdef __APPLE__
@@ -35,6 +38,11 @@ namespace Core::Helpers
     {
         if(PlatformHelperInstance)
         {
+            // Forward callbacks to platform-specific instance
+            for (const auto& callback : InstallCallbacks) {
+                PlatformHelperInstance->AddInstallCallback(callback);
+            }
+            
             PlatformHelperInstance->Initialize();
             bIsInitialized = true;
         }

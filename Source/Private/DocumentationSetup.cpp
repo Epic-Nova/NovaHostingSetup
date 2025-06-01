@@ -1,74 +1,81 @@
-#include "NovaMinimal.h"
+/// @file DocumentationSetup.cpp
+/// @brief Main entry point for the setup process.
+
 #include "NovaCore.h"
-#include "Helpers/BaseHelper.h" // Add this include for BaseHelper
+#include "NovaMinimal.h"
+#include "Menus/MainMenu.h"
+#include "Utils/CommandLineParsing.h"
+#include "Utils/Interactables.h"
+#include "Utils/TerminalUtils.h"
+#include "UnitTests/BaseUnitTest.h"
+#include "UnitTests/UnitTestManager.h"
+#include "Menus/OptionsMenu.h"
 
-#ifdef __APPLE__
-#include "Helpers/BrewInstallHelper.h"
-#endif
-
-#include "Helpers/PipInstallHelper/PipInstallHelper.h"
 
 using namespace Core;
+using namespace Utils;
 
 int main(int argc, const char* argv[]) 
 {
-    using namespace Menus;
-    using namespace Core::Helpers;
+    // Ensure terminal size is set
+    Utils::TerminalUtils::SetTerminalSize(65, 40);
+
+    // Initialize Logging system & Default directories
+    NovaLog::StartLogFile();
+    NovaLog::CreateRequiredDirectories();
+
+    NOVA_LOG("Starting Nova Documentation Setup", LogType::Log);
+
+    if (std::string(BUILD_CONFIGURATION) == "Development" || std::string(BUILD_CONFIGURATION) == "Testing") 
+    {
+        NOVA_LOG("Running in Development or Testing mode", LogType::Warning);
+        NovaLog::SetVerbose(true);
+
+        NOVA_LOG("Checking for unit tests...", LogType::Log);
     
-    NOVA_LOG("Nova Documentation Setup started!", LogType::Debug);
+        // Initialize unit test 
+        UnitTestManager unitTestManager;
+        unitTestManager.Initialize(argc, argv);
 
-    Core::NovaLog::StartLogFile();
+        // Run unit tests if requested
+        if (unitTestManager.RunUnitTests()) {
+            return 0; 
+        }
+    }
+    else if(std::string(BUILD_CONFIGURATION) == "Production")
+    {
+        NOVA_LOG("Running in Production mode", LogType::Log);
+        NovaLog::SetVerbose(false); 
+    }
 
-    auto MainMenuPtr = MainMenu::InitializeMainMenu();
-      MainMenuPtr->SetMenuActionCallback("InstallRequirements", [&]() {
-      NOVA_LOG("Installing requirements...", LogType::Debug);
-
-
-      //if mac, then install brew. and also install pip and then install venv
-
-        #ifdef __APPLE__
-        BrewInstallHelper* BrewInstallHelperPtr = BrewInstallHelper::CreatePlatformSpecific();
-        BrewInstallHelperPtr->Initialize();
-        BrewInstallHelperPtr->Execute([&]() {
-            return BrewInstallHelperPtr->IsBrewInstalled();
-        });
-        #endif
-
-        PipInstallHelper* PipInstallHelperPtr = PipInstallHelper::CreatePlatformSpecific();
-        PipInstallHelperPtr->Initialize();
-        PipInstallHelperPtr->Execute([&]() {
-            return PipInstallHelperPtr->HasPipInstalled();
-        });
-
-        NOVA_LOG("Requirements installed successfully!", LogType::Log);
-        
-        // Here you would typically ask for the git repository URL and clone it
-
-      //We also need to ask for the working directory, then create a pip venv and install the requirementws from the git project (also we have to ask for the path of this project)
-    });
-
-    MainMenuPtr->SetMenuActionCallback("StartDocumentationWebpage", [&]() {
-        NOVA_LOG("Starting documentation webpage...", LogType::Debug);
-        // Here you would typically launch a web browser or server to display the documentation
-        // For now, we will just log it
-
-        //For this we just have to call mkdocs serve on the venv path
-        NOVA_LOG("Documentation webpage started successfully!", LogType::Debug);
-      });
-
-    MainMenuPtr->SetMenuActionCallback("Quit", [&]() {
-        NOVA_LOG("Quitting application...", LogType::Debug);
-        MainMenuPtr->GetScreen().ExitLoopClosure()();
-        NOVA_LOG("Application exited successfully!", LogType::Log);
-    });
     
-    MainMenuPtr->SetMenuActionCallback("ShowHelp", [&]() {
-        NOVA_LOG("Showing help...", LogType::Debug);
-        // Here you would typically display help information
-        // For now, we will just log it
-        NOVA_LOG("Help displayed successfully!", LogType::Log);
-    });
+    // Initialize command-line options structure
+    CommandLineOptionsStruct cmdOptions;
+    {
+        NOVA_LOG("Command line arguments received:", LogType::Log);
+        for (int i = 0; i < argc; ++i) {
+            NOVA_LOG(("Argument " + std::to_string(i) + ": " + argv[i]).c_str(), LogType::Log);
+        }
 
+        // Create options menu
+        auto optionsMenu = Menus::OptionsMenu::Create(cmdOptions);
+
+        // Register command-line options dynamically
+        optionsMenu->RegisterCommandLineOptions();
+
+        // Parse command-line arguments using dynamically registered options
+        cmdOptions = CommandLineParsing::ParseArguments(argc, argv, optionsMenu->GetCommandLineMapping());
+
+        // Apply command-line arguments to the options menu
+        optionsMenu->ApplyCommandLineOptions(cmdOptions);
+    }
+
+    // Initialize main menu
+    std::shared_ptr<Menus::MainMenu> MainMenuPtr;
+    MainMenuPtr = Menus::MainMenu::InitializeMainMenu();
+
+    // Register all menu callbacks
+    Interactables::RegisterMenuCallbacks(MainMenuPtr, cmdOptions, "Content");
     MainMenuPtr->Show();
 
     return 0;

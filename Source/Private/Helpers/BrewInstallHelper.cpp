@@ -1,96 +1,124 @@
+/// @file BrewInstallHelper.cpp
+/// @brief macOS-specific Homebrew installation routines.
+
+#include "NovaCore.h"
+#include "NovaMinimal.h"
+
+#include "Helpers/RootAccessHelper/RootAccessHelper.h"
+
 #ifdef __APPLE__
 
 #include "Helpers/BrewInstallHelper.h"
-#include <cstdlib>
-#include "NovaCore.h"
 
 namespace Core::Helpers
 {
     void BrewInstallHelper::Initialize()
     {
+        FireInstallCallback("Initializing Homebrew Helper...");
+        
         // Check if Homebrew is installed
         bIsBrewInstalled = IsBrewInstalled();
         if (!bIsBrewInstalled)
         {
-            Execute([&]() {
-                if (bIsBrewInstalled)
-                {
-                    FireInstallCallback("Homebrew was successfully installed.");
-                    NOVA_LOG("Homebrew was successfully installed.", Core::LogType::Debug);
-                    return true;
-                }
-                else
-                {
-                    FireInstallCallback("Failed to verify Homebrew installation.");
-                    NOVA_LOG("Failed to verify Homebrew installation.", Core::LogType::Error);
-                    return false;
-                }
-            });
+            FireInstallCallback("Homebrew not found, will need to install it");
         }
+        else
+        {
+            FireInstallCallback("Homebrew is already installed");
+        }
+        
+        bIsInitialized = true;
+        FireInstallCallback("Homebrew Helper initialized successfully");
     }
 
     void BrewInstallHelper::Execute(std::function<bool()> callback)
     {
-        RootAccessHelper* rootAccessHelper = RootAccessHelper::CreatePlatformSpecific();
-        if (rootAccessHelper)
+        bIsRunning = true;
+        FireInstallCallback("Starting Homebrew installation process...");
+        
+        if (IsBrewInstalled())
         {
-            rootAccessHelper->Initialize();
-            if (!rootAccessHelper->HasRootAccess())
-            {
-                NOVA_LOG("Requesting elevated privileges for Homebrew installation...", Core::LogType::Log);
-                rootAccessHelper->Execute([&]() {
-                    
-                    rootAccessHelper->RunCommandWithElevatedPrivileges("bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"");
-                    //We need to forward the prgress of the download and installation to our install screen
-
-                    callback();
-                    NOVA_LOG("Homebrew installation process completed.", Core::LogType::Debug);
-                    return true;
-                });
-            }
-        }
-        else
-        {
-            NOVA_LOG("RootAccessHelper instance is null. Cannot proceed with Homebrew installation.", Core::LogType::Error);
+            bIsBrewInstalled = true;
+            FireInstallCallback("Homebrew is already installed - skipping installation");
+            callback();
+            bIsRunning = false;
             return;
         }
+
+        RootAccessHelper* rootAccessHelper = RootAccessHelper::CreatePlatformSpecific();
+        rootAccessHelper->SetInstallCallbackFunction([this](const std::string& msg) {
+            FireInstallCallback("Root Access: " + msg);
+        });
+        rootAccessHelper->Initialize();
+        
+        rootAccessHelper->Execute([&]() {
+            FireInstallCallback("Downloading Homebrew installation script...");
+            
+            bool success = ExecuteCommandBlocking("bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"");
+            
+            if (success) {
+                FireInstallCallback("Verifying Homebrew installation...");
+                bIsBrewInstalled = IsBrewInstalled();
+                
+                if (bIsBrewInstalled) {
+                    FireInstallCallback("Homebrew installation completed successfully");
+                } else {
+                    FireInstallCallback("Installation script completed but Homebrew not found in PATH");
+                }
+            } else {
+                FireInstallCallback("Homebrew installation failed");
+            }
+            
+            callback();
+            bIsRunning = false;
+            delete rootAccessHelper;
+            return success;
+        });
+        
+        // Wait for completion
+        WaitForCompletion();
     }
 
     void BrewInstallHelper::Shutdown()
     {
         //Uninstall Homebrew if it was installed, before request root access
-        if (bIsBrewInstalled)
+        if (IsBrewInstalled())
         {
             RootAccessHelper* rootAccessHelper = RootAccessHelper::CreatePlatformSpecific();
-            if (rootAccessHelper)
-            {
-                rootAccessHelper->Initialize();
-                if (!rootAccessHelper->HasRootAccess())
+            rootAccessHelper->Initialize();
+            rootAccessHelper->Execute([&]() {
+                if (rootAccessHelper->RunCommandWithElevatedPrivileges("brew uninstall --force brew"))
                 {
-                    NOVA_LOG("Requesting elevated privileges for Homebrew uninstallation...", Core::LogType::Log);
-                    rootAccessHelper->Execute([&]() {
-                        rootAccessHelper->RunCommandWithElevatedPrivileges("brew uninstall --force brew");
-                        //we need to forward the progress of the uninstallation to our install screen
-                        return true;
-                    });
+                    bIsBrewInstalled = false; // Update the flag after uninstallation
+                    NOVA_LOG("Homebrew has been uninstalled successfully.", Core::LogType::Log);
+                    FireInstallCallback("Homebrew has been uninstalled successfully.");
+                    return true;
                 }
-            }
-            else
-            {
-                NOVA_LOG("RootAccessHelper instance is null. Cannot proceed with Homebrew uninstallation.", Core::LogType::Error);
-                return;
-            }
+                else
+                {
+                    NOVA_LOG("Failed to uninstall Homebrew.", Core::LogType::Error);
+                    FireInstallCallback("Failed to uninstall Homebrew.");
+                    return false;
+                }
+            });
         }
         else
         {
             NOVA_LOG("Homebrew is not installed, nothing to uninstall.", Core::LogType::Debug);
+            FireInstallCallback("Homebrew is not installed, nothing to uninstall.");
         }
+        bIsBrewInstalled = false; // Reset the flag after shutdown
+        NOVA_LOG("BrewInstallHelper_Darwin shutdown completed.", Core::LogType::Debug);
+        FireInstallCallback("BrewInstallHelper_Darwin has been shut down.");
+        bIsInitialized = false; // Reset the initialization flag
     }
 
     void BrewInstallHelper::Reset()
     {
-        bIsBrewInstalled = false;
+        bIsInitialized = false; // Reset the initialization flag
+        bIsBrewInstalled = false; // Reset the Homebrew installation flag
         NOVA_LOG("Brew installation process has been reset.", Core::LogType::Debug);
+        FireInstallCallback("Brew installation process has been reset.");
     }
 
     void BrewInstallHelper::Abort()
@@ -98,6 +126,10 @@ namespace Core::Helpers
         //we need to fetch the current terminal instance that handles the installation and kill it
         Reset();
         NOVA_LOG("Brew installation process has been aborted.", Core::LogType::Debug);
+        FireInstallCallback("Brew installation process has been aborted.");
+        bIsAborted = true; // Set the aborted flag
+        bIsRunning = false; // Reset the running flag
+        bIsInitialized = false; // Reset the initialization flag
     }
 
     bool BrewInstallHelper::IsBrewInstalled() const
@@ -111,24 +143,42 @@ namespace Core::Helpers
     {
         if (!bIsBrewInstalled)
         {
-            NOVA_LOG("Cannot install package: Homebrew is not installed.", Core::LogType::Error);
+            FireInstallCallback("Cannot install package: Homebrew is not installed");
             callback(false);
             return;
         }
 
-        std::string command = "brew install " + packageName;
-        //We need to forward the progress of the installation to our install screen
-        int result = system(command.c_str());
+        bIsRunning = true;
+        FireInstallCallback("Installing package: " + packageName);
         
-        if (result == 0)
-        {
-            NOVA_LOG(("Package " + packageName + " installed successfully.").c_str(), Core::LogType::Debug);
+        std::string command = "brew install " + packageName;
+        bool success = ExecuteCommandBlocking(command);
+        
+        if (success) {
+            FireInstallCallback("Package " + packageName + " installed successfully");
             callback(true);
-        }
-        else
-        {
-            NOVA_LOG(("Failed to install package " + packageName + ".").c_str(), Core::LogType::Error);
+        } else {
+            FireInstallCallback("Failed to install package " + packageName);
             callback(false);
+        }
+        
+        bIsRunning = false;
+    }
+
+    bool BrewInstallHelper::RunCommandWithProgress(const std::string& command)
+    {
+        FireInstallCallback("Executing: " + command);
+
+        // Suppress output to prevent GUI interference
+        std::string fullCommand = command + " > /dev/null 2>&1";
+        int result = system(fullCommand.c_str());
+        
+        if (result == 0) {
+            FireInstallCallback("Command completed successfully");
+            return true;
+        } else {
+            FireInstallCallback("Command failed with return code: " + std::to_string(result));
+            return false;
         }
     }
 

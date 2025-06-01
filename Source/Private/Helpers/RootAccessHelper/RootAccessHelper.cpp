@@ -1,3 +1,6 @@
+/// @file RootAccessHelper.cpp
+/// @brief Root/elevated access factory and shared routines.
+
 #include "Helpers/RootAccessHelper/RootAccessHelper.h"
 
 #ifdef __APPLE__
@@ -39,6 +42,11 @@ namespace Core::Helpers
     {
         if (PlatformHelperInstance)
         {
+            // Forward callbacks to platform-specific instance
+            for (const auto& callback : InstallCallbacks) {
+                PlatformHelperInstance->AddInstallCallback(callback);
+            }
+            
             PlatformHelperInstance->Initialize();
             bIsInitialized = true;
         }
@@ -63,8 +71,15 @@ namespace Core::Helpers
     {
         if (PlatformHelperInstance && bIsInitialized)
         {
-            PlatformHelperInstance->Execute(callback);
             bIsRunning = true;
+            PlatformHelperInstance->Execute([&]() {
+                bool result = callback();
+                bIsRunning = false;
+                return result;
+            });
+            
+            // Wait for completion
+            WaitForCompletion();
         }
         else
         {

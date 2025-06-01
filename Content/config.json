@@ -1,0 +1,10 @@
+{
+    "clearContent": false,
+    "mkdocsProjectPath": "fidjflkdjsjdkfsf",
+    "noRoot": true,
+    "requestRootForBrew": true,
+    "requestRootForPip": true,
+    "requestRootForVenv": true,
+    "scrollableLogAlwaysVisible": true,
+    "verbose": true
+}

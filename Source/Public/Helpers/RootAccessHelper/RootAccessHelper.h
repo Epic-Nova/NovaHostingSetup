@@ -1,3 +1,6 @@
+/// @file RootAccessHelper.h
+/// @brief Manages cross-platform root/elevated access.
+
 #pragma once
 
 #include "Helpers/BaseHelper.h"
@@ -48,4 +51,4 @@ namespace Core::Helpers
         static RootAccessHelper* PlatformHelperInstance;
 
     };
-}    
+}

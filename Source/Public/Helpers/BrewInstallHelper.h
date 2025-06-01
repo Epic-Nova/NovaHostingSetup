@@ -1,3 +1,6 @@
+/// @file BrewInstallHelper.h
+/// @brief Manages Homebrew installation and package handling on macOS.
+
 #pragma once 
 
 #ifdef __APPLE__
@@ -43,6 +46,9 @@ namespace Core::Helpers
 
         // This function installs a package using Homebrew
         void InstallPackage(const std::string& packageName, std::function<void(bool)> callback);
+        
+        // Add method to run commands with progress tracking
+        bool RunCommandWithProgress(const std::string& command) override;
         
         private:
         bool bIsBrewInstalled = false; // Flag to check if Homebrew is installed

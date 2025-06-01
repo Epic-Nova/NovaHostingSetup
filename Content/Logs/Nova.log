@@ -1,0 +1,31 @@
+====================================================
+=          NOVA DOCUMENTATION SETUP LOG            =
+====================================================
+Started: Sun Jun  1 23:08:34 2025
+====================================================
+
+[2025-06-01 23:08:34] Starting Nova Documentation Setup
+[2025-06-01 23:08:34] WARNING: Running in Development or Testing mode
+[2025-06-01 23:08:34] DEBUG: Verbose logging enabled
+[2025-06-01 23:08:34] Checking for unit tests...
+[2025-06-01 23:08:34] Command line arguments received:
+[2025-06-01 23:08:34] Argument 0: ./Binaries/DocumentationSetup
+[2025-06-01 23:08:34] Loading configuration...
+[2025-06-01 23:08:34] Configuration loaded successfully.
+[2025-06-01 23:08:34] Registering command-line options dynamically...
+[2025-06-01 23:08:34] Command-line options registered successfully.
+[2025-06-01 23:08:34] Applying command-line options dynamically...
+[2025-06-01 23:08:34] Command-line option 'requestRootForVenv' applied: Enabled
+[2025-06-01 23:08:34] Command-line option 'requestRootForPip' applied: Enabled
+[2025-06-01 23:08:34] Command-line option 'requestRootForBrew' applied: Enabled
+[2025-06-01 23:08:34] Command-line option 'scrollableLogAlwaysVisible' applied: Enabled
+[2025-06-01 23:08:34] Command-line options applied successfully.
+[2025-06-01 23:08:34] Menu action: Options set!
+[2025-06-01 23:08:34] Menu action: InstallRequirements set!
+[2025-06-01 23:08:34] Menu action: StartDocumentationWebpage set!
+[2025-06-01 23:08:34] Menu action: ShowHelp set!
+[2025-06-01 23:08:34] Menu action: Quit set!
+[2025-06-01 23:08:34] Showing main menu!
+[2025-06-01 23:08:34] Created main menu buttons!
+[2025-06-01 23:31:52] DEBUG: Showing help menu...
+[2025-06-01 23:31:52] Showing help menu!
