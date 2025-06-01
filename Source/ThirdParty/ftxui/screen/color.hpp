@@ -1,8 +1,11 @@
+// Copyright 2020 Arthur Sonzogni. All rights reserved.
+// Use of this source code is governed by the MIT license that can be found in
+// the LICENSE file.
 #ifndef FTXUI_SCREEN_COLOR_HPP
 #define FTXUI_SCREEN_COLOR_HPP
 
 #include <cstdint>  // for uint8_t
-#include <string>   // for wstring
+#include <string>   // for string
 
 #ifdef RGB
 // Workaround for wingdi.h (via Windows.h) defining macros that break things.
@@ -20,14 +23,22 @@ class Color {
   enum Palette16 : uint8_t;
   enum Palette256 : uint8_t;
 
+  // NOLINTBEGIN
   Color();                  // Transparent.
   Color(Palette1 index);    // Transparent.
   Color(Palette16 index);   // Implicit conversion from index to Color.
   Color(Palette256 index);  // Implicit conversion from index to Color.
-  Color(uint8_t red, uint8_t green, uint8_t blue);
+  // NOLINTEND
+  Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha = 255);
   static Color RGB(uint8_t red, uint8_t green, uint8_t blue);
   static Color HSV(uint8_t hue, uint8_t saturation, uint8_t value);
+  static Color RGBA(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha);
+  static Color HSVA(uint8_t hue,
+                    uint8_t saturation,
+                    uint8_t value,
+                    uint8_t alpha);
   static Color Interpolate(float t, const Color& a, const Color& b);
+  static Color Blend(const Color& lhs, const Color& rhs);
 
   //---------------------------
   // List of colors:
@@ -305,6 +316,7 @@ class Color {
   bool operator!=(const Color& rhs) const;
 
   std::string Print(bool is_background_color) const;
+  bool IsOpaque() const { return alpha_ == 255; }
 
  private:
   enum class ColorType : uint8_t {
@@ -317,6 +329,7 @@ class Color {
   uint8_t red_ = 0;
   uint8_t green_ = 0;
   uint8_t blue_ = 0;
+  uint8_t alpha_ = 0;
 };
 
 inline namespace literals {
@@ -330,7 +343,3 @@ Color operator""_rgb(unsigned long long int combined);
 }  // namespace ftxui
 
 #endif  // FTXUI_SCREEN_COLOR_HPP
-
-// Copyright 2020 Arthur Sonzogni. All rights reserved.
-// Use of this source code is governed by the MIT license that can be found in
-// the LICENSE file.

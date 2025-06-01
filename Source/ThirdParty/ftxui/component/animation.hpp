@@ -1,14 +1,13 @@
+// Copyright 2022 Arthur Sonzogni. All rights reserved.
+// Use of this source code is governed by the MIT license that can be found in
+// the LICENSE file.
 #ifndef FTXUI_ANIMATION_HPP
 #define FTXUI_ANIMATION_HPP
 
 #include <chrono>      // for milliseconds, duration, steady_clock, time_point
 #include <functional>  // for function
 
-#include "ftxui/component/event.hpp"
-
-namespace ftxui {
-
-namespace animation {
+namespace ftxui::animation {
 // Components who haven't completed their animation can call this function to
 // request a new frame to be drawn later.
 //
@@ -18,12 +17,12 @@ void RequestAnimationFrame();
 
 using Clock = std::chrono::steady_clock;
 using TimePoint = std::chrono::time_point<Clock>;
-using Duration = std::chrono::duration<double>;
+using Duration = std::chrono::duration<float>;
 
 // Parameter of Component::OnAnimation(param).
 class Params {
  public:
-  Params(Duration duration) : duration_(duration) {}
+  explicit Params(Duration duration) : duration_(duration) {}
 
   /// The duration this animation step represents.
   Duration duration() const { return duration_; }
@@ -90,11 +89,11 @@ float BounceInOut(float p);
 
 class Animator {
  public:
-  Animator(float* from,
-           float to = 0.f,
-           Duration duration = std::chrono::milliseconds(250),
-           easing::Function easing_function = easing::Linear,
-           Duration delay = std::chrono::milliseconds(0));
+  explicit Animator(float* from,
+                    float to = 0.f,
+                    Duration duration = std::chrono::milliseconds(250),
+                    easing::Function easing_function = easing::Linear,
+                    Duration delay = std::chrono::milliseconds(0));
 
   void OnAnimation(Params&);
 
@@ -109,11 +108,6 @@ class Animator {
   Duration current_;
 };
 
-}  // namespace animation
-}  // namespace ftxui
+}  // namespace ftxui::animation
 
 #endif /* end of include guard: FTXUI_ANIMATION_HPP */
-
-// Copyright 2022 Arthur Sonzogni. All rights reserved.
-// Use of this source code is governed by the MIT license that can be found in
-// the LICENSE file.

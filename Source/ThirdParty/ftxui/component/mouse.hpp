@@ -1,3 +1,6 @@
+// Copyright 2020 Arthur Sonzogni. All rights reserved.
+// Use of this source code is governed by the MIT license that can be found in
+// the LICENSE file.
 #ifndef FTXUI_COMPONENT_MOUSE_HPP
 #define FTXUI_COMPONENT_MOUSE_HPP
 namespace ftxui {
@@ -13,32 +16,32 @@ struct Mouse {
     None = 3,
     WheelUp = 4,
     WheelDown = 5,
+    WheelLeft = 6,   /// Supported terminal only.
+    WheelRight = 7,  /// Supported terminal only.
   };
 
   enum Motion {
     Released = 0,
     Pressed = 1,
+    Moved = 2,
   };
 
   // Button
-  Button button;
+  Button button = Button::None;
 
   // Motion
-  Motion motion;
+  Motion motion = Motion::Pressed;
 
   // Modifiers:
-  bool shift;
-  bool meta;
-  bool control;
+  bool shift = false;
+  bool meta = false;
+  bool control = false;
 
   // Coordinates:
-  int x;
-  int y;
+  int x = 0;
+  int y = 0;
 };
 
 }  // namespace ftxui
 
-// Copyright 2020 Arthur Sonzogni. All rights reserved.
-// Use of this source code is governed by the MIT license that can be found in
-// the LICENSE file.
 #endif /* end of include guard: FTXUI_COMPONENT_MOUSE_HPP */

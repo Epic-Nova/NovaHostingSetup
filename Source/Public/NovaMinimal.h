@@ -14,7 +14,3 @@
 #include <array>
 #include <cstdlib>
 #include <stdio.h>
-
-//Third Party Includes
-#include "connection.h"
-#include "restclient.h"

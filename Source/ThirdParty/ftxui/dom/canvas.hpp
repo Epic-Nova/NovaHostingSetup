@@ -1,3 +1,6 @@
+// Copyright 2021 Arthur Sonzogni. All rights reserved.
+// Use of this source code is governed by the MIT license that can be found in
+// the LICENSE file.
 #ifndef FTXUI_DOM_CANVAS_HPP
 #define FTXUI_DOM_CANVAS_HPP
 
@@ -6,8 +9,8 @@
 #include <string>         // for string
 #include <unordered_map>  // for unordered_map
 
-#include "ftxui/screen/color.hpp"   // for Color
-#include "ftxui/screen/screen.hpp"  // for Pixel
+#include "ftxui/screen/color.hpp"  // for Color
+#include "ftxui/screen/image.hpp"  // for Pixel, Image
 
 #ifdef DrawText
 // Workaround for WinUsr.h (via Windows.h) defining macros that break things.
@@ -92,6 +95,12 @@ struct Canvas {
   void DrawText(int x, int y, const std::string& value, const Color& color);
   void DrawText(int x, int y, const std::string& value, const Stylizer& style);
 
+  // Draw using directly pixels or images --------------------------------------
+  // x is considered to be a multiple of 2.
+  // y is considered to be a multiple of 4.
+  void DrawPixel(int x, int y, const Pixel&);
+  void DrawImage(int x, int y, const Image&);
+
   // Decorator:
   // x is considered to be a multiple of 2.
   // y is considered to be a multiple of 4.
@@ -101,15 +110,18 @@ struct Canvas {
   bool IsIn(int x, int y) const {
     return x >= 0 && x < width_ && y >= 0 && y < height_;
   }
+
   enum CellType {
-    kBraille,
-    kBlock,
-    kText,
+    kCell,     // Units of size 2x4
+    kBlock,    // Units of size 2x2
+    kBraille,  // Units of size 1x1
   };
+
   struct Cell {
-    CellType type = kText;
+    CellType type = kCell;
     Pixel content;
   };
+
   struct XY {
     int x;
     int y;
@@ -133,7 +145,3 @@ struct Canvas {
 }  // namespace ftxui
 
 #endif  // FTXUI_DOM_CANVAS_HPP
-
-// Copyright 2021 Arthur Sonzogni. All rights reserved.
-// Use of this source code is governed by the MIT license that can be found in
-// the LICENSE file.

@@ -1,3 +1,6 @@
+// Copyright 2020 Arthur Sonzogni. All rights reserved.
+// Use of this source code is governed by the MIT license that can be found in
+// the LICENSE file.
 #ifndef FTXUI_COMPONENT_BASE_HPP
 #define FTXUI_COMPONENT_BASE_HPP
 
@@ -26,19 +29,31 @@ using Components = std::vector<Component>;
 /// @ingroup component
 class ComponentBase {
  public:
-  // virtual Destructor.
+  explicit ComponentBase(Components children)
+      : children_(std::move(children)) {}
   virtual ~ComponentBase();
+  ComponentBase() = default;
+
+  // A component is not copyable/movable.
+  ComponentBase(const ComponentBase&) = delete;
+  ComponentBase(ComponentBase&&) = delete;
+  ComponentBase& operator=(const ComponentBase&) = delete;
+  ComponentBase& operator=(ComponentBase&&) = delete;
 
   // Component hierarchy:
   ComponentBase* Parent() const;
   Component& ChildAt(size_t i);
   size_t ChildCount() const;
+  int Index() const;
   void Add(Component children);
   void Detach();
   void DetachAllChildren();
 
   // Renders the component.
-  virtual Element Render();
+  Element Render();
+
+  // Override this function modify how `Render` works.
+  virtual Element OnRender();
 
   // Handles an event.
   // By default, reduce on children with a lazy OR.
@@ -82,12 +97,9 @@ class ComponentBase {
 
  private:
   ComponentBase* parent_ = nullptr;
+  bool in_render = false;
 };
 
 }  // namespace ftxui
 
 #endif /* end of include guard: FTXUI_COMPONENT_BASE_HPP */
-
-// Copyright 2020 Arthur Sonzogni. All rights reserved.
-// Use of this source code is governed by the MIT license that can be found in
-// the LICENSE file.

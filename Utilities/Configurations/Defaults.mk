@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # ------------ Definitions ------------ # # --------------------------- Defualt Values --------------------------- # # ------------------ Comments -------------------#
 # ------------------------------------------------------------------------- General ----------------------------------------------------------------------------------#
-BUILD_NAME	  								?=		  NovaHostingSetup#				  # Build Name											  	 		  			  #
+BUILD_NAME	  								?=		  SetupDocumentation#		      # Build Name											  	 		  			  #
 BUILD_SYSTEM_VERSION						?=		  0.0.1#						  # Build System Version (Major.Minor.Patch)					  				  #
 SOURCE_DIRECTORY							?= 		  ${shell pwd}/Source#		  	  # Build Directory												  				  #
 BUILD_DIRECTORY								?= 		  ${shell pwd}/Binaries#		  # Source Directory												  		  	  #
@@ -22,8 +22,28 @@ BUILD_OPTIMSATIONS							?=		  -O3#							  # Build optimsations											  			
 PUBLIC_DIRECTORY = ${SOURCE_DIRECTORY}/Public
 BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}
 BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}/Core
+BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}/Core/FileStreams
+BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}/Menus
+BUILD_FLAGS += -I ${PUBLIC_DIRECTORY}/Helpers
 
 #This adds the ThirdParty include directory to the include paths
+UNAME_S := $(shell uname -s)
+
+# Platform-specific configuration
+ifeq ($(UNAME_S), Darwin)
+    THIRD_PARTY_DIRECTORY := $(THIRD_PARTY_DIRECTORY)/Darwin
+    # Add macOS-specific frameworks
+    PLATFORM_FRAMEWORKS += -framework Security
+    PLATFORM_FRAMEWORKS += -framework Foundation
+else ifeq ($(UNAME_S), Linux)
+    THIRD_PARTY_DIRECTORY := $(THIRD_PARTY_DIRECTORY)/Linux
+    # Add Linux-specific libraries if needed
+    PLATFORM_LIBRARIES += -lsudo
+else
+    # Windows or other platforms
+    $(warning Unsupported platform: $(UNAME_S))
+endif
+
 THIRD_PARTY_INCLUDE_DIRECTORY = ${SOURCE_DIRECTORY}/ThirdParty
 BUILD_FLAGS += -I ${THIRD_PARTY_INCLUDE_DIRECTORY}
 BUILD_FLAGS += -I ${THIRD_PARTY_INCLUDE_DIRECTORY}/ftxui
@@ -37,7 +57,6 @@ THIRD_PARTY_LIBRARIES += ${FTXUI_LIB_DIR}/libftxui-dom.a
 THIRD_PARTY_LIBRARIES += ${FTXUI_LIB_DIR}/libftxui-screen.a
 THIRD_PARTY_LIBRARIES += -lpthread
 
-RESTCLIENT_LIB_DIR := ${THIRD_PARTY_DIRECTORY}/restclient
-THIRD_PARTY_LIBRARIES += ${RESTCLIENT_LIB_DIR}/librestclient-cpp.a
-THIRD_PARTY_LIBRARIES += ${RESTCLIENT_LIB_DIR}/librestclient-cpp.so
-THIRD_PARTY_LIBRARIES += -lcurl
+# Add platform-specific libraries/frameworks
+THIRD_PARTY_LIBRARIES += $(PLATFORM_FRAMEWORKS)
+THIRD_PARTY_LIBRARIES += $(PLATFORM_LIBRARIES)

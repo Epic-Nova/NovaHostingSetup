@@ -35,7 +35,7 @@ namespace Core
         }
         pclose(Pipe);
 
--        if (Result.find("Status: install ok installed") != std::string::npos)
+         if (Result.find("Status: install ok installed") != std::string::npos)
         {
             return true;
         }

@@ -1,15 +1,16 @@
+// Copyright 2020 Arthur Sonzogni. All rights reserved.
+// Use of this source code is governed by the MIT license that can be found in
+// the LICENSE file.
 #ifndef FTXUI_COMPONENT_RECEIVER_HPP_
 #define FTXUI_COMPONENT_RECEIVER_HPP_
 
-#include <algorithm>           // for copy
+#include <algorithm>           // for copy, max
 #include <atomic>              // for atomic, __atomic_base
 #include <condition_variable>  // for condition_variable
-#include <functional>
-#include <iostream>
-#include <memory>   // for unique_ptr, make_unique
-#include <mutex>    // for mutex, unique_lock
-#include <queue>    // for queue
-#include <utility>  // for move
+#include <memory>              // for unique_ptr, make_unique
+#include <mutex>               // for mutex, unique_lock
+#include <queue>               // for queue
+#include <utility>             // for move
 
 namespace ftxui {
 
@@ -51,6 +52,10 @@ template<class T> Receiver<T> MakeReceiver();
 template <class T>
 class SenderImpl {
  public:
+  SenderImpl(const SenderImpl&) = delete;
+  SenderImpl(SenderImpl&&) = delete;
+  SenderImpl& operator=(const SenderImpl&) = delete;
+  SenderImpl& operator=(SenderImpl&&) = delete;
   void Send(T t) { receiver_->Receive(std::move(t)); }
   ~SenderImpl() { receiver_->ReleaseSender(); }
 
@@ -58,7 +63,7 @@ class SenderImpl {
 
  private:
   friend class ReceiverImpl<T>;
-  SenderImpl(ReceiverImpl<T>* consumer) : receiver_(consumer) {}
+  explicit SenderImpl(ReceiverImpl<T>* consumer) : receiver_(consumer) {}
   ReceiverImpl<T>* receiver_;
 };
 
@@ -70,15 +75,17 @@ class ReceiverImpl {
     senders_++;
     return std::unique_ptr<SenderImpl<T>>(new SenderImpl<T>(this));
   }
-  ReceiverImpl() { senders_ = 0; }
+  ReceiverImpl() = default;
 
   bool Receive(T* t) {
     while (senders_ || !queue_.empty()) {
       std::unique_lock<std::mutex> lock(mutex_);
-      if (queue_.empty())
+      if (queue_.empty()) {
         notifier_.wait(lock);
-      if (queue_.empty())
+      }
+      if (queue_.empty()) {
         continue;
+      }
       *t = std::move(queue_.front());
       queue_.pop();
       return true;
@@ -86,9 +93,24 @@ class ReceiverImpl {
     return false;
   }
 
+  bool ReceiveNonBlocking(T* t) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (queue_.empty()) {
+      return false;
+    }
+    *t = queue_.front();
+    queue_.pop();
+    return true;
+  }
+
   bool HasPending() {
     std::unique_lock<std::mutex> lock(mutex_);
     return !queue_.empty();
+  }
+
+  bool HasQuitted() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    return queue_.empty() && !senders_;
   }
 
  private:
@@ -110,7 +132,7 @@ class ReceiverImpl {
   std::mutex mutex_;
   std::queue<T> queue_;
   std::condition_variable notifier_;
-  std::atomic<int> senders_;
+  std::atomic<int> senders_{0};
 };
 
 template <class T>
@@ -121,7 +143,3 @@ Receiver<T> MakeReceiver() {
 }  // namespace ftxui
 
 #endif  // FTXUI_COMPONENT_RECEIVER_HPP_
-
-// Copyright 2020 Arthur Sonzogni. All rights reserved.
-// Use of this source code is governed by the MIT license that can be found in
-// the LICENSE file.
