@@ -2,8 +2,6 @@
 
 #ifdef __APPLE__
 
-#include "NovaCore.h"
-#include "NovaMinimal.h"
 #include "Helpers/RootAccessHelper/RootAccessHelper.h"
 #include <Security/Security.h>
 

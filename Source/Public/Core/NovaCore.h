@@ -1,5 +1,4 @@
 #include "NovaLog.h"
-#include "NovaPackageHandler.h"
 
 //Menus
 #include "MainMenu.h"

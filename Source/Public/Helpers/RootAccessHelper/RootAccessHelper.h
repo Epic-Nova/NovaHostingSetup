@@ -1,6 +1,5 @@
 #pragma once
 
-#include "NovaMinimal.h"
 #include "Helpers/BaseHelper.h"
 
 namespace Core::Helpers

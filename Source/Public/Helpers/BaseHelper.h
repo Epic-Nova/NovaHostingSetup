@@ -20,8 +20,26 @@ namespace Core::Helpers
             virtual void Execute(std::function<bool()> callback) = 0;
             virtual void Reset() = 0;
             virtual void Abort() = 0;
+            virtual bool HasMetRequirements() const { return true; } // Default implementation, can be overridden
             bool IsRunning() { return bIsRunning; }
             bool IsAborted() { return bIsAborted; } 
+
+        // Add callbacks to the delegate
+        void AddInstallCallback(std::function<void(std::string)> callback) {
+            InstallCallbacks.push_back(callback);
+        }
+
+        // Fire all callbacks
+        void FireInstallCallback(const std::string& message) {
+            for (auto& callback : InstallCallbacks) {
+                if (callback) {
+                    callback(message);
+                }
+            }
+        }
+
+        // This callback is used by the installation process itself
+        std::vector<std::function<void(std::string)>> InstallCallbacks;  
 
         protected:
 

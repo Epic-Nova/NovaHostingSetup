@@ -1,12 +1,20 @@
-[2025-06-01 01:57:30] Menu action: InstallRequirements set!
-[2025-06-01 01:57:30] Menu action: StartDocumentationWebpage set!
-[2025-06-01 01:57:30] Menu action: Quit set!
-[2025-06-01 01:57:30] Nova Documentation Setup started!
-[2025-06-01 01:57:30] RootAccessHelper_Darwin initialized successfully
-[2025-06-01 01:57:30] Requesting root access...
-[2025-06-01 01:57:34] Root access granted successfully
-[2025-06-01 01:57:34] Command executed successfully with root privileges
-[2025-06-01 01:57:34] Showing main menu!
-[2025-06-01 01:57:34] Created main menu buttons!
-[2025-06-01 01:57:54] Quitting application...
-[2025-06-01 01:57:54] Application exited successfully!
+[2025-06-01 05:02:50] Menu action: InstallRequirements set!
+[2025-06-01 05:02:50] Menu action: StartDocumentationWebpage set!
+[2025-06-01 05:02:50] Menu action: Quit set!
+[2025-06-01 05:02:50] Menu action: ShowHelp set!
+[2025-06-01 05:02:50] Showing main menu!
+[2025-06-01 05:02:50] Created main menu buttons!
+[2025-06-01 05:02:51] Installing requirements...
+[2025-06-01 05:02:51] RootAccessHelper_Darwin initialized successfully
+[2025-06-01 05:02:51] Requesting elevated privileges for Homebrew installation...
+[2025-06-01 05:02:55] Root access granted successfully
+[2025-06-01 05:02:55] Command executed successfully with root privileges
+[2025-06-01 05:02:55] Homebrew installation process completed.
+[2025-06-01 05:02:55] RootAccessHelper_Darwin initialized successfully
+[2025-06-01 05:02:58] Failed to obtain root access
+[2025-06-01 05:02:58] PipInstallHelper_Darwin initialized
+[2025-06-01 05:02:58] RootAccessHelper_Darwin initialized successfully
+[2025-06-01 05:02:59] Failed to obtain root access
+[2025-06-01 05:02:59] PipInstallHelper_Darwin initialized
+[2025-06-01 05:02:59] Requirements installed successfully!
+[2025-06-01 05:05:52] Nova Documentation Setup started!

@@ -4,7 +4,7 @@
 #include "Helpers/RootAccessHelper/Platforms/RootAccessHelper_Darwin.h"
 #endif // Apple
 
-#ifdef defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 #include "Helpers/RootAccessHelper/Platforms/RootAccessHelper_Windows.h"
 #endif 
 
@@ -18,6 +18,11 @@ namespace Core::Helpers
 
     RootAccessHelper* RootAccessHelper::CreatePlatformSpecific()
     {
+        if(PlatformHelperInstance)
+        {
+            return PlatformHelperInstance; // Return existing instance if already created
+        }
+        
         #ifdef __APPLE__
         PlatformHelperInstance = new RootAccessHelper_Darwin();
         #elif defined(_WIN32) || defined(_WIN64)

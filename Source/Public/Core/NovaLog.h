@@ -1,3 +1,5 @@
+#pragma once
+
 #include "NovaMinimal.h"
 
 namespace Core

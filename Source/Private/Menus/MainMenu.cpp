@@ -23,6 +23,7 @@ namespace Menus
 
         auto InstallRequirementsButton = Button("Install Requirements", *GetMenuActionCallback("InstallRequirements"), ButtonOption::Animated(Color::Black, Color::Purple, Color::White, Color::MediumPurple));
         auto StartDocumentationWebpageButton = Button("Start Documentation Webpage", *GetMenuActionCallback("StartDocumentationWebpage"), ButtonOption::Animated(Color::Black, Color::Purple, Color::White, Color::MediumPurple));
+        auto HelpButton = Button("Help", *GetMenuActionCallback("ShowHelp"), ButtonOption::Animated(Color::Black, Color::Purple, Color::White, Color::MediumPurple));
         auto QuitButton = Button("Quit", *GetMenuActionCallback("Quit"), ButtonOption::Animated(Color::Black, Color::Purple, Color::White, Color::MediumPurple));
         
         NOVA_LOG("Created main menu buttons!", LogType::Log);
@@ -30,13 +31,24 @@ namespace Menus
         auto menu = Container::Vertical({
             InstallRequirementsButton,
             StartDocumentationWebpageButton,
+            HelpButton,
             QuitButton
             });
 
+            //i want this to be fill out the whole window space
+            
         auto component = Renderer(menu, [&] {
             return vbox({
-                menu->Render(),
-            }) | xflex | size(WIDTH, GREATER_THAN, 40) | border;
+                vbox({
+                    text("Nova Documentation Setup") | bold | center | color(Color::White) | bgcolor(Color::Black),
+                    separator(),
+                    text("Welcome to the Nova Documentation Setup!") | center,
+                    separator(),
+                    text("Please select an option below:") | center
+                }) | border | center,
+                separator(),
+                menu->Render() | center
+            }) | size(WIDTH, GREATER_THAN, 70) | center;
         });
 
         GetScreen().Loop(component);
