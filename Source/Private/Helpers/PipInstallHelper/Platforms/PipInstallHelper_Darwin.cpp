@@ -8,40 +8,7 @@ namespace Core::Helpers
 {
     void PipInstallHelper_Darwin::Initialize()
     {
-        if(!HasMetRequirements())
-        {
-            NOVA_LOG("Requirements for pip installation not met", LogType::Error);
-            FireInstallCallback("Requirements for pip installation not met.");
-            return;
-        }
-
-        RootAccessHelper* rootAccessHelper = RootAccessHelper::CreatePlatformSpecific();
-        rootAccessHelper->Initialize();
-        rootAccessHelper->Execute([&]() {
-            // Check if pip is already installed
-            if (HasPipInstalled())
-            {
-                NOVA_LOG("Pip is already installed.", LogType::Log);
-                FireInstallCallback("Pip is already installed.");
-                return true;
-            }
-            else
-            {
-                // Install pip using Homebrew
-                rootAccessHelper->RunCommandWithElevatedPrivileges("brew install pip");
-                // We need to forward the progress of the installation to our install screen
-                NOVA_LOG("Installing pip using Homebrew...", LogType::Log);
-                FireInstallCallback("Installing pip using Homebrew...");
-
-                bHasPipInstalled = true;
-                NOVA_LOG("Pip has been installed successfully.", LogType::Log);
-                FireInstallCallback("Pip has been installed successfully.");
-                return true;
-            }
-        });
-        NOVA_LOG("PipInstallHelper_Darwin initialized", LogType::Log);
-        FireInstallCallback("PipInstallHelper_Darwin has been initialized.");
-        bIsInitialized = true;
+        //We don't need to do anything here
     }
 
     void PipInstallHelper_Darwin::Shutdown()
