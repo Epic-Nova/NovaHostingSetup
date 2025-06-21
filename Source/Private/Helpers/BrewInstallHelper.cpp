@@ -3,6 +3,7 @@
 
 #include "NovaCore.h"
 #include "NovaMinimal.h"
+#include "NovaLog.h"
 
 #include "Helpers/RootAccessHelper/RootAccessHelper.h"
 
@@ -12,138 +13,164 @@
 
 namespace Core::Helpers
 {
-    void BrewInstallHelper::Initialize()
+    bool BrewInstallHelper::Initialize()
     {
-        FireInstallCallback("Initializing Homebrew Helper...");
+        NOVA_LOG_VERBOSE("BrewInstallHelper_Darwin initializing...", Core::LogType::Debug);
+        FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.initializing");
         
-        // Check if Homebrew is installed
-        bIsBrewInstalled = IsBrewInstalled();
-        if (!bIsBrewInstalled)
+        bIsInitialized = IsBrewInstalled();
+        if (!bIsInitialized)
         {
-            FireInstallCallback("Homebrew not found, will need to install it");
+            NOVA_LOG("Homebrew is not installed, will need to install it.", Core::LogType::Log);
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.not_installed");
         }
         else
         {
-            FireInstallCallback("Homebrew is already installed");
+            NOVA_LOG("Homebrew is already installed on macOS.", Core::LogType::Log);
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.already_installed");
         }
         
-        bIsInitialized = true;
-        FireInstallCallback("Homebrew Helper initialized successfully");
+        NOVA_LOG_VERBOSE("BrewInstallHelper_Darwin initialized successfully.", Core::LogType::Debug);
+        FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.initialized");
+        return bIsInitialized;
     }
-
-    void BrewInstallHelper::Execute(std::function<bool()> callback)
-    {
-        bIsRunning = true;
-        FireInstallCallback("Starting Homebrew installation process...");
-        
-        if (IsBrewInstalled())
-        {
-            bIsBrewInstalled = true;
-            FireInstallCallback("Homebrew is already installed - skipping installation");
-            callback();
-            bIsRunning = false;
-            return;
-        }
-
-        RootAccessHelper* rootAccessHelper = RootAccessHelper::CreatePlatformSpecific();
-        rootAccessHelper->SetInstallCallbackFunction([this](const std::string& msg) {
-            FireInstallCallback("Root Access: " + msg);
-        });
-        rootAccessHelper->Initialize();
-        
-        rootAccessHelper->Execute([&]() {
-            FireInstallCallback("Downloading Homebrew installation script...");
-            
-            bool success = ExecuteCommandBlocking("bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"");
-            
-            if (success) {
-                FireInstallCallback("Verifying Homebrew installation...");
-                bIsBrewInstalled = IsBrewInstalled();
-                
-                if (bIsBrewInstalled) {
-                    FireInstallCallback("Homebrew installation completed successfully");
-                } else {
-                    FireInstallCallback("Installation script completed but Homebrew not found in PATH");
-                }
-            } else {
-                FireInstallCallback("Homebrew installation failed");
-            }
-            
-            callback();
-            bIsRunning = false;
-            delete rootAccessHelper;
-            return success;
-        });
-        
-        // Wait for completion
-        WaitForCompletion();
-    }
-
+    
     void BrewInstallHelper::Shutdown()
     {
-        //Uninstall Homebrew if it was installed, before request root access
         if (IsBrewInstalled())
         {
             RootAccessHelper* rootAccessHelper = RootAccessHelper::CreatePlatformSpecific();
-            rootAccessHelper->Initialize();
+            if (!rootAccessHelper->Initialize())
+            {
+                NOVA_LOG("Failed to initialize RootAccessHelper for shutdown.", Core::LogType::Error);
+                FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.shutdown_failed");
+                return;
+            }
+            
             rootAccessHelper->Execute([&]() {
-                if (rootAccessHelper->RunCommandWithElevatedPrivileges("brew uninstall --force brew"))
+                if (rootAccessHelper->RunCommandWithElevatedPrivileges("brew uninstall --force brew", [](const std::string& msg) {
+                    // Empty callback
+                }))
                 {
-                    bIsBrewInstalled = false; // Update the flag after uninstallation
+                    bIsInitialized = false; 
                     NOVA_LOG("Homebrew has been uninstalled successfully.", Core::LogType::Log);
-                    FireInstallCallback("Homebrew has been uninstalled successfully.");
+                    FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.uninstalled");
                     return true;
                 }
                 else
                 {
                     NOVA_LOG("Failed to uninstall Homebrew.", Core::LogType::Error);
-                    FireInstallCallback("Failed to uninstall Homebrew.");
+                    FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.uninstall_failed");
                     return false;
                 }
             });
         }
         else
         {
+            bIsInitialized = false; 
             NOVA_LOG("Homebrew is not installed, nothing to uninstall.", Core::LogType::Debug);
-            FireInstallCallback("Homebrew is not installed, nothing to uninstall.");
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.not_installed");
         }
-        bIsBrewInstalled = false; // Reset the flag after shutdown
         NOVA_LOG("BrewInstallHelper_Darwin shutdown completed.", Core::LogType::Debug);
-        FireInstallCallback("BrewInstallHelper_Darwin has been shut down.");
-        bIsInitialized = false; // Reset the initialization flag
+        FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.shutdown");
     }
+    void BrewInstallHelper::Execute(std::function<bool()> callback)
+    {
+        bIsRunning = true;
+
+        NOVA_LOG_VERBOSE("BrewInstallHelper_Darwin executing installation...", Core::LogType::Debug);
+        FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.executing");
+        
+        if (IsBrewInstalled())
+        {
+            NOVA_LOG("Homebrew is already installed, skipping installation.", Core::LogType::Log);
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.already_installed");
+            callback();
+            bIsRunning = false;
+            return;
+        }
+
+        RootAccessHelper* rootAccessHelper = RootAccessHelper::CreatePlatformSpecific();
+        rootAccessHelper->SetInstallCallbackFunction("root_access_progress", [this](const std::string& msg) {
+            FireInstallCallback("Root Access: " + msg);
+        });
+        
+        if (!rootAccessHelper->Initialize())
+        {
+            NOVA_LOG("Failed to initialize RootAccessHelper for installation.", Core::LogType::Error);
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.root_access_not_initialized");
+            bIsRunning = false;
+            return;
+        }
+        
+        rootAccessHelper->Execute([&]() {
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.installing");
+            
+            bool success = ExecuteCommandBlocking("bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"");
+            
+            if (success) 
+            {
+                NOVA_LOG("Homebrew installation script executed successfully.", Core::LogType::Log);
+                FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.installation_completed");
+                callback();
+                
+                if (bIsInitialized) {
+
+                    NOVA_LOG("Homebrew is now installed and available in PATH.", Core::LogType::Log);
+                    FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.installation_script_completed");
+                    callback();
+                } 
+                else 
+                {
+                    NOVA_LOG("Homebrew installation script completed but Homebrew not found in PATH.", Core::LogType::Warning);
+                    FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.installation_script_completed");
+                    callback();
+                }
+            } 
+            else 
+            {
+                NOVA_LOG("Homebrew installation failed.", Core::LogType::Error);
+                FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.installation_failed");
+            }
+            
+            bIsRunning = false;
+            delete rootAccessHelper;
+            return success;
+        });
+        
+        WaitForCompletion();
+    }
+
 
     void BrewInstallHelper::Reset()
     {
-        bIsInitialized = false; // Reset the initialization flag
-        bIsBrewInstalled = false; // Reset the Homebrew installation flag
         NOVA_LOG("Brew installation process has been reset.", Core::LogType::Debug);
-        FireInstallCallback("Brew installation process has been reset.");
+        FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.reset");
+
+        bIsInitialized = false;
     }
 
     void BrewInstallHelper::Abort()
     {
-        //we need to fetch the current terminal instance that handles the installation and kill it
-        Reset();
         NOVA_LOG("Brew installation process has been aborted.", Core::LogType::Debug);
-        FireInstallCallback("Brew installation process has been aborted.");
-        bIsAborted = true; // Set the aborted flag
-        bIsRunning = false; // Reset the running flag
-        bIsInitialized = false; // Reset the initialization flag
+        FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.aborted");
+
+        bIsRunning = false;
+        bIsInitialized = false;
     }
 
     bool BrewInstallHelper::IsBrewInstalled() const
     {
-        // Check if Homebrew is installed by checking the command availability
         int result = system("which brew > /dev/null 2>&1");
         return (result == 0);
     }
 
     void BrewInstallHelper::InstallPackage(const std::string& packageName, std::function<void(bool)> callback)
     {
-        if (!bIsBrewInstalled)
+        if (!bIsInitialized)
         {
-            FireInstallCallback("Cannot install package: Homebrew is not installed");
+            NOVA_LOG("Cannot install package: Homebrew is not installed", Core::LogType::Error);
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.package_install_failed");
             callback(false);
             return;
         }
@@ -159,6 +186,40 @@ namespace Core::Helpers
             callback(true);
         } else {
             FireInstallCallback("Failed to install package " + packageName);
+            callback(false);
+        }
+        
+        bIsRunning = false;
+    }
+
+    void BrewInstallHelper::UninstallPackage(const std::string& packageName, std::function<void(bool)> callback)
+    {
+        if (!bIsInitialized)
+        {
+            NOVA_LOG("Cannot uninstall package: Homebrew is not installed", Core::LogType::Error);
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.package_uninstall_failed");
+            callback(false);
+            return;
+        }
+
+        bIsRunning = true;
+        FireInstallCallback("Uninstalling package: " + packageName);
+        
+        std::string command = "brew uninstall " + packageName;
+        bool success = ExecuteCommandBlocking(command);
+        
+        if (success)
+        {
+            std::string successMsg = "Package " + packageName + " uninstalled successfully";
+            NOVA_LOG(successMsg.c_str(), Core::LogType::Log);
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.package_uninstalled");
+            callback(true);
+        }
+        else 
+        {
+            std::string errorMsg = "Failed to uninstall package " + packageName;
+            NOVA_LOG(errorMsg.c_str(), Core::LogType::Error);
+            FireInstallCallback("com.epicnova.adi.fh.ds.brew_install_helper.package_uninstall_failed");
             callback(false);
         }
         

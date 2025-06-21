@@ -31,6 +31,13 @@ namespace Menus
         void StartInstallation();
         void ViewProgress();
 
+        enum class InstallationMethod {
+            None,
+            AutoDetect,
+            GitDownload,
+            ManualPath
+        };
+
     private:
         // Add static mutex declaration
         static std::mutex progressMutex_;
@@ -64,6 +71,22 @@ namespace Menus
         std::string errorMessage_;
         std::string projectPath_;
         std::atomic<bool> startInstallation_{false};
+        InstallationMethod installationMethod_ = InstallationMethod::None;
+        
+        // Project paths
+        std::string mkdocsProjectPath_;
+        std::string gitUsername_;
+        std::string gitToken_;
+        std::string gitRepoUrl_ = "https://github.com/Epic-Nova/FH-POI-Documentation";
+        std::string gitDestination_ = "Content/Website";
+        
+        // Methods for handling different installation paths
+        bool DetectInstallationAutomatically();
+        bool SetupGitDownload();
+        bool SetupManualPath();
+        
+        // Execute installation based on method
+        bool ExecuteInstallation();
         
         ftxui::Element RenderProgressList();
         ftxui::Element RenderCurrentStatus();

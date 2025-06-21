@@ -16,7 +16,7 @@ namespace Core::Helpers
         public:
 
         //This function initializes different classes depending on the operating system
-        virtual void Initialize() override;
+        virtual bool Initialize() override;
 
         //This function removes the root access from the progress
         virtual void Shutdown() override;
@@ -37,7 +37,7 @@ namespace Core::Helpers
 
         virtual std::string GetElevationCommand(const std::string& command) const override;
 
-        virtual bool RunCommandWithElevatedPrivileges(const std::string& command) override;
+        virtual bool RunCommandWithElevatedPrivileges(const std::string& command, std::function<void(std::string)> callback) override;
 
         private:
             AuthorizationRef authRef = NULL; // Authorization reference for macOS root access

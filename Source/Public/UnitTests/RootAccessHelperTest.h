@@ -38,7 +38,7 @@ public:
             std::cout << "RootAccessHelper reset successfully." << std::endl;
             rootHelper->Abort();
             std::cout << "RootAccessHelper aborted successfully." << std::endl;
-            if (rootHelper->IsRunning() || rootHelper->IsAborted()) {
+            if (rootHelper->IsRunning()) {
                 throw std::runtime_error("RootAccessHelper is still running or aborted state is not cleared.");
             }
             std::cout << "RootAccessHelper test completed successfully." << std::endl;

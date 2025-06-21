@@ -34,17 +34,11 @@ namespace Core::Helpers
         return PlatformHelperInstance;
     }
     
-    void PipInstallHelper::Initialize()
+    bool PipInstallHelper::Initialize()
     {
         if(PlatformHelperInstance)
         {
-            // Forward callbacks to platform-specific instance
-            for (const auto& callback : InstallCallbacks) {
-                PlatformHelperInstance->AddInstallCallback(callback);
-            }
-            
-            PlatformHelperInstance->Initialize();
-            bIsInitialized = true;
+            return PlatformHelperInstance->Initialize();
         }
         else
         {
@@ -82,8 +76,6 @@ namespace Core::Helpers
         {
             PlatformHelperInstance->Reset();
             bIsRunning = false;
-            bIsAborted = false;
-            bHasPipInstalled = false; // Reset the pip installation state
         }
     }
 
@@ -92,9 +84,7 @@ namespace Core::Helpers
         if (PlatformHelperInstance)
         {
             PlatformHelperInstance->Abort();
-            bIsAborted = true;
             bIsRunning = false;
-            bHasPipInstalled = false; // Reset the pip installation state
         }
     }
 
@@ -112,7 +102,6 @@ namespace Core::Helpers
         if (PlatformHelperInstance && bIsInitialized)
         {
             PlatformHelperInstance->InstallPackage(packageName, [&](std::string result) {
-                bHasPipInstalled = true; // Set the flag to true when a package is installed
                 callback(result);
             });
         }

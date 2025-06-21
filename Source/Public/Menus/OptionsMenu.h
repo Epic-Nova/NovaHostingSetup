@@ -31,11 +31,11 @@ namespace Menus
         void ApplyCommandLineOptions(const CommandLineOptionsStruct& cmdOptions);
         const std::unordered_map<std::string, std::string*>& GetCommandLineMapping() const { return commandLineMapping_; }
 
-    private:
         CommandLineOptionsStruct& options_;
+    private:
         std::unordered_map<std::string, std::string*> commandLineMapping_;
-        
-        OptionsMenu(CommandLineOptionsStruct& options) : options_(options) {}
+    
+    OptionsMenu(CommandLineOptionsStruct& options) : options_(options) {}
 
         CommandLineOptions* optionManager_ = Utils::CommandLineOptions::GetSingletonInstance();
 

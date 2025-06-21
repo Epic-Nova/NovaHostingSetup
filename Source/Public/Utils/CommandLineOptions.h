@@ -16,7 +16,7 @@ namespace Utils
         bool requestRootForPip = true; // Request root access for Pip
         bool requestRootForVenv = true; // Request root access for Virtual Environment
         bool scrollableLogAlwaysVisible = false; // Keep scrollable log always visible
-        std::string mkdocsProjectPath = ""; // Path to MkDocs project
+        std::string mkdocsProjectPath = "Rawr, I am a Dinosaur!"; // Path to MkDocs project
     };
     
 

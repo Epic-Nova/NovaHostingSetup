@@ -13,32 +13,73 @@
 
 namespace Core::Helpers
 {
-    void RootAccessHelper_Darwin::Initialize()
+    bool RootAccessHelper_Darwin::Initialize()
     {
+        NOVA_LOG_VERBOSE("Initializing RootAccessHelper_Darwin", Core::LogType::Debug);
+        
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.initializing");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.already_initialized");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.authorization_creation_failed");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.initialized");
+        
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.shutdown");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.shutdown_completed");
+        
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.not_initialized");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.elevated_privileges_granted");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.elevated_privileges_failed");
+        
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.reset");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.authorization_recreation_failed");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.reset_completed");
+
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.aborted");
+        
+        FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.initializing");
+
+
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.requesting_elevated_privileges");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.no_elevated_privileges");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.command_starting");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.command_execution_failed");
+
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.command_success");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.command_failed");
+        RegisterEmptyInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.command_timed_out");
+
+
+
         if(bIsInitialized) 
         {
             NOVA_LOG("RootAccessHelper_Darwin is already initialized", Core::LogType::Warning);
-            FireInstallCallback("RootAccessHelper_Darwin is already initialized");
-
-            return;
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.already_initialized");
+            
+            return true;
         }
         
         OSStatus status = AuthorizationCreate(NULL, kAuthorizationEmptyEnvironment, kAuthorizationFlagDefaults, &authRef);
         if (status != errAuthorizationSuccess) 
         {
             NOVA_LOG("Failed to create authorization reference", Core::LogType::Error);
-            FireInstallCallback("Failed to create authorization reference");
-            return;
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.authorization_creation_failed");
+            return false;
         }
         
-        bIsInitialized = true;
         NOVA_LOG("RootAccessHelper_Darwin initialized successfully", Core::LogType::Debug);
-        FireInstallCallback("RootAccessHelper_Darwin has been initialized successfully");
-        bHasElevatedPrivileges = false; // Initially, we do not have elevated privileges
+        FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.initialized");
+        
+        bHasElevatedPrivileges = false;
+        bIsInitialized = true;
+        authRef = NULL; 
+
+        return bIsInitialized;
     }
 
     void RootAccessHelper_Darwin::Shutdown()
     {
+        NOVA_LOG("Shutting down RootAccessHelper_Darwin", Core::LogType::Debug);
+        FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.shutdown");
+
         if (authRef != NULL) 
         {
             AuthorizationFree(authRef, kAuthorizationFlagDefaults);
@@ -46,17 +87,18 @@ namespace Core::Helpers
         }
         
         bIsInitialized = false;
+
         bHasElevatedPrivileges = false;
         NOVA_LOG("RootAccessHelper_Darwin shutdown completed", Core::LogType::Debug);
-        FireInstallCallback("RootAccessHelper_Darwin has been shut down");
+        FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.shutdown_completed");
     }
 
     void RootAccessHelper_Darwin::Execute(std::function<bool()> callback)
     {
         if (!bIsInitialized) 
         {
-            NOVA_LOG("RootAccessHelper_Darwin not initialized", Core::LogType::Error);
-            FireInstallCallback("RootAccessHelper_Darwin not initialized");
+            NOVA_LOG_VERBOSE("RootAccessHelper_Darwin not initialized", Core::LogType::Error);
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.not_initialized");
             return;
         }
 
@@ -74,20 +116,24 @@ namespace Core::Helpers
         if (status == errAuthorizationSuccess) 
         {
             bHasElevatedPrivileges = true;
+
             NOVA_LOG("Elevated privileges granted", Core::LogType::Debug);
-            FireInstallCallback("Elevated privileges granted");
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.elevated_privileges_granted");
             callback();
         } 
         else 
         {
             NOVA_LOG("Failed to obtain elevated privileges", Core::LogType::Error);
-            FireInstallCallback("Failed to obtain elevated privileges");
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.elevated_privileges_failed");
             bHasElevatedPrivileges = false;
         }
     }
 
     void RootAccessHelper_Darwin::Reset()
     {
+        NOVA_LOG_VERBOSE("Resetting RootAccessHelper_Darwin", Core::LogType::Debug);
+        FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.reset");
+
         if (authRef != NULL) 
         {
             // Revoke the authorization
@@ -98,15 +144,17 @@ namespace Core::Helpers
             if (status != errAuthorizationSuccess) 
             {
                 NOVA_LOG("Failed to recreate authorization reference during reset", Core::LogType::Error);
-                FireInstallCallback("Failed to recreate authorization reference during reset");
+                FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.authorization_recreation_failed");
+
                 authRef = NULL;
                 bIsInitialized = false;
             }
         }
         
         bHasElevatedPrivileges = false;
+
         NOVA_LOG("RootAccessHelper_Darwin reset completed", Core::LogType::Debug);
-        FireInstallCallback("RootAccessHelper_Darwin has been reset");    
+        FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.reset_completed");  
     }
 
     void RootAccessHelper_Darwin::Abort()
@@ -119,8 +167,9 @@ namespace Core::Helpers
         
         bHasElevatedPrivileges = false;
         bIsInitialized = false;
+
         NOVA_LOG("RootAccessHelper_Darwin aborted", Core::LogType::Debug);
-        FireInstallCallback("RootAccessHelper_Darwin has been aborted");    
+        FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.aborted");
     }
 
     bool RootAccessHelper_Darwin::HasRootAccess() const
@@ -132,7 +181,7 @@ namespace Core::Helpers
     {
         Execute([this]() {
             NOVA_LOG("Requesting elevated privileges...", Core::LogType::Log);
-            FireInstallCallback("Requesting elevated privileges...");
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.requesting_elevated_privileges");
             return true; 
         });
         return bHasElevatedPrivileges;
@@ -143,42 +192,68 @@ namespace Core::Helpers
         return "sudo " + command; 
     }
 
-    bool RootAccessHelper_Darwin::RunCommandWithElevatedPrivileges(const std::string& command)
+    bool RootAccessHelper_Darwin::RunCommandWithElevatedPrivileges(const std::string& command, std::function<void(std::string)> callback)
     {
         if (!bHasElevatedPrivileges && !RequestElevatedPrivileges()) 
         {
             NOVA_LOG("Cannot run command as root: no elevated privileges", Core::LogType::Error);
-            FireInstallCallback("Cannot run command as root: no elevated privileges");
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.no_elevated_privileges");
+
             return false;
         }
 
-        NOVA_LOG(("Executing command: " + command).c_str(), Core::LogType::Debug);
-        FireInstallCallback("Executing command: " + command);
+        std::string startMsg = "Executing command: " + command;
+        NOVA_LOG(startMsg.c_str(), Core::LogType::Debug);
+        FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.command_starting");
 
-        // Suppress output to prevent GUI interference
-        std::string fullCommand = command + " > /dev/null 2>&1";
+        if (callback) callback(startMsg);
+
+        // Don't suppress output so we can capture progress
+        std::string fullCommand = command + " 2>&1";
         FILE* pipe = popen(fullCommand.c_str(), "r");
         
         if (!pipe) 
         {
-            NOVA_LOG("Failed to open pipe for command execution", Core::LogType::Error);
-            FireInstallCallback("Failed to open pipe for command execution");
+            std::string errorMsg = "Failed to open pipe for command execution";
+            NOVA_LOG(errorMsg.c_str(), Core::LogType::Error);
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.command_execution_failed");
+
             return false;
         }
 
-        // Since output is redirected, we'll just wait for completion
+        // Read output line by line and pass it to the callback
+        char buffer[256];
+        while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+            std::string outputLine(buffer);
+            // Remove trailing newline if present
+            if (!outputLine.empty() && outputLine[outputLine.length()-1] == '\n') {
+                outputLine.erase(outputLine.length()-1);
+            }
+            
+            // Send output to callback
+            if (callback) callback(outputLine);
+            
+            // Also log the output at debug level
+            NOVA_LOG(("Command output: " + outputLine).c_str(), Core::LogType::Debug);
+        }
+        
         int returnCode = pclose(pipe);
         
         if (returnCode == 0) 
         {
-            NOVA_LOG("Command executed successfully", Core::LogType::Debug);
-            FireInstallCallback("Command executed successfully");
+            std::string successMsg = "Command executed successfully";
+            NOVA_LOG(successMsg.c_str(), Core::LogType::Debug);
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.command_success");
+
+            if (callback) callback(successMsg);
             return true;
         } 
         else 
         {
-            NOVA_LOG(("Command failed with return code: " + std::to_string(returnCode)).c_str(), Core::LogType::Error);
-            FireInstallCallback("Command failed with return code: " + std::to_string(returnCode));
+            std::string errorMsg = "Command failed with return code: " + std::to_string(returnCode);
+            NOVA_LOG(errorMsg.c_str(), Core::LogType::Error);
+            FireInstallCallback("com.epicnova.adi.fh.ds.root_access_helper_darwin.command_failed");
+
             return false;
         }
     }

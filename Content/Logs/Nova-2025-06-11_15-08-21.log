@@ -1,0 +1,31 @@
+====================================================
+=          NOVA DOCUMENTATION SETUP LOG            =
+====================================================
+Started: Wed Jun 11 14:48:42 2025
+====================================================
+
+[2025-06-11 14:48:42] Starting Nova Documentation Setup
+[2025-06-11 14:48:42] WARNING: Running in Development or Testing mode
+[2025-06-11 14:48:42] DEBUG: Verbose logging enabled
+[2025-06-11 14:48:42] Checking for unit tests...
+[2025-06-11 14:48:42] Command line arguments received:
+[2025-06-11 14:48:42] Argument 0: ./Binaries/DocumentationSetup
+[2025-06-11 14:48:42] Loading configuration...
+[2025-06-11 14:48:42] Configuration loaded successfully.
+[2025-06-11 14:48:42] Registering command-line options dynamically...
+[2025-06-11 14:48:42] Command-line options registered successfully.
+[2025-06-11 14:48:42] Applying command-line options dynamically...
+[2025-06-11 14:48:42] Command-line option 'requestRootForVenv' applied: Enabled
+[2025-06-11 14:48:42] Command-line option 'requestRootForPip' applied: Enabled
+[2025-06-11 14:48:42] Command-line option 'requestRootForBrew' applied: Enabled
+[2025-06-11 14:48:42] Command-line options applied successfully.
+[2025-06-11 14:48:42] Menu action: Options set!
+[2025-06-11 14:48:42] Menu action: InstallRequirements set!
+[2025-06-11 14:48:42] Menu action: StartDocumentationWebpage set!
+[2025-06-11 14:48:42] Menu action: ShowHelp set!
+[2025-06-11 14:48:42] Menu action: Quit set!
+[2025-06-11 14:48:42] Showing main menu!
+[2025-06-11 14:48:42] Created main menu buttons!
+[2025-06-11 14:48:46] DEBUG: Quitting application...
+[2025-06-11 15:08:21] DEBUG: Setting terminal size to 65x40
+[2025-06-11 15:08:21] DEBUG: Terminal size set using ANSI escape codes on Unix-like system

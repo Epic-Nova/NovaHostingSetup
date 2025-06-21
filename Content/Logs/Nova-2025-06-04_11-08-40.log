@@ -1,0 +1,34 @@
+====================================================
+=          NOVA DOCUMENTATION SETUP LOG            =
+====================================================
+Started: Mon Jun  2 14:57:16 2025
+====================================================
+
+[2025-06-02 14:57:16] Starting Nova Documentation Setup
+[2025-06-02 14:57:16] WARNING: Running in Development or Testing mode
+[2025-06-02 14:57:16] DEBUG: Verbose logging enabled
+[2025-06-02 14:57:16] Checking for unit tests...
+[2025-06-02 14:57:16] Command line arguments received:
+[2025-06-02 14:57:16] Argument 0: ./Binaries/DocumentationSetup
+[2025-06-02 14:57:16] Argument 1: -noRoot=true
+[2025-06-02 14:57:16] Loading configuration...
+[2025-06-02 14:57:16] WARNING: Configuration file not found, recreating default configuration.
+[2025-06-02 14:57:16] Saving configuration...
+[2025-06-02 14:57:16] Configuration saved successfully.
+[2025-06-02 14:57:16] Registering command-line options dynamically...
+[2025-06-02 14:57:16] Command-line options registered successfully.
+[2025-06-02 14:57:16] Applying command-line options dynamically...
+[2025-06-02 14:57:16] Command-line option 'requestRootForVenv' applied: Enabled
+[2025-06-02 14:57:16] Command-line option 'requestRootForPip' applied: Enabled
+[2025-06-02 14:57:16] Command-line option 'requestRootForBrew' applied: Enabled
+[2025-06-02 14:57:16] Command-line options applied successfully.
+[2025-06-02 14:57:16] Menu action: Options set!
+[2025-06-02 14:57:16] Menu action: InstallRequirements set!
+[2025-06-02 14:57:16] Menu action: StartDocumentationWebpage set!
+[2025-06-02 14:57:16] Menu action: ShowHelp set!
+[2025-06-02 14:57:16] Menu action: Quit set!
+[2025-06-02 14:57:16] Showing main menu!
+[2025-06-02 14:57:16] Created main menu buttons!
+[2025-06-02 14:57:21] DEBUG: Quitting application...
+[2025-06-04 11:08:40] DEBUG: Setting terminal size to 65x40
+[2025-06-04 11:08:40] DEBUG: Terminal size set using ANSI escape codes on Unix-like system

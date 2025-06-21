@@ -5,6 +5,10 @@
 #include "NovaMinimal.h"
 #include "Utils/ScrollableLog.h"
 #include "MainMenu.h"
+#include "Menus/InputMenus.h"
+#include "Core/NovaFileOperations.h"
+#include "Helpers/GitInstallHelper/GitInstallHelper.h"
+
 
 namespace Menus
 {
@@ -89,7 +93,7 @@ namespace Menus
         auto start_time = std::chrono::steady_clock::now();
         bool show_particles = true;
 
-        // Create custom button style function
+        // Create custom button style function with proper centering
         auto makeStyledButton = [&](const std::string& label, std::function<void()> callback, Color bg, Color fg, Color bg_active, Color fg_active) {
             auto option = ButtonOption::Animated(bg, fg, bg_active, fg_active);
             option.transform = (std::function<Element(const EntryState&)>) [=](const EntryState& state) -> Element {
@@ -97,7 +101,7 @@ namespace Menus
                 std::string suffix = state.focused ? " ◀" : "  ";
                 return hbox({
                     text(prefix),
-                    text(state.label) | ftxui::bold | size(WIDTH, GREATER_THAN, 30),
+                    text(state.label) | ftxui::bold | size(WIDTH, GREATER_THAN, 40),
                     text(suffix),
                 }) | center | size(HEIGHT, GREATER_THAN, 1);
             };
@@ -114,7 +118,7 @@ namespace Menus
             },
             Color::Black, Color::Green, Color::Green, Color::White
         );
-
+        
         auto CancelButton = makeStyledButton(
             "❌ Cancel",
             [&]() {
@@ -124,13 +128,69 @@ namespace Menus
             },
             Color::Black, Color::Red, Color::Red, Color::White
         );
+        
+        // Additional installation option buttons
+        auto DetectButton = makeStyledButton(
+            "🔍 Detect Installation Automatically",
+            [&]() {
+                NOVA_LOG("Auto-detection of installation initiated!", LogType::Log);
+                if (DetectInstallationAutomatically()) {
+                    installationMethod_ = InstallationMethod::AutoDetect;
+                    NOVA_LOG("Auto-detection successful!", LogType::Log);
+                } else {
+                    NOVA_LOG("Auto-detection failed, please select another option.", LogType::Warning);
+                }
+            },
+            Color::Black, Color::Cyan, Color::Cyan, Color::White
+        );
+
+        auto GitButton = makeStyledButton(
+            "📥 Download from Remote using Git",
+            [&]() {
+                NOVA_LOG("Git download selected!", LogType::Log);
+                if (SetupGitDownload()) {
+                    installationMethod_ = InstallationMethod::GitDownload;
+                    NOVA_LOG("Git setup complete!", LogType::Log);
+                } else {
+                    NOVA_LOG("Git setup canceled or failed.", LogType::Warning);
+                }
+            },
+            Color::Black, Color::Blue, Color::Blue, Color::White
+        );
+
+        auto ManualButton = makeStyledButton(
+            "📁 Enter Path Manually",
+            [&]() {
+                NOVA_LOG("Manual path entry selected!", LogType::Log);
+                if (SetupManualPath()) {
+                    installationMethod_ = InstallationMethod::ManualPath;
+                    NOVA_LOG("Manual path setup complete!", LogType::Log);
+                } else {
+                    NOVA_LOG("Manual path setup canceled.", LogType::Warning);
+                }
+            },
+            Color::Black, Color::Yellow, Color::Yellow, Color::Black
+        );
+
 
         auto menu = Container::Vertical({
+            DetectButton,
+            GitButton,
+            ManualButton,
+            Renderer([] { return text("") | center; }), // Vertical spacer
             ConfirmButton,
             CancelButton
         });
 
-        auto component = Renderer(menu, [=]() -> Element {
+        auto centered_menu = Renderer(menu, [menu] {
+            return hbox({
+                text("") | flex,
+                menu->Render(),
+                text("") | flex
+            });
+        });
+
+        auto component = Renderer(centered_menu, [=]() -> Element {
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
 
@@ -147,12 +207,12 @@ namespace Menus
 
             // Animated title
             std::vector<std::string> ascii_title {
-                "██╗███╗   ██╗████████╗ █████╗ ██╗     ███████╗",
-                "██║████╗  ██║╚══██╔══╝██╔══██╗██║     ██╔════╝",
-                "██║██╔██╗ ██║   ██║   ███████║██║     █████╗  ",
-                "██║██║╚██╗██║   ██║   ██╔══██║██║     ██╔══╝  ",
-                "██║██║ ╚████║   ██║   ██║  ██║███████╗███████╗",
-                "╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝"
+            "██╗███╗   ██╗███████╗████████╗ █████╗ ██╗     ██╗     ",
+            "██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║     ██║     ",
+            "██║██╔██╗ ██║███████╗   ██║   ███████║██║     ██║     ",
+            "██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║     ██║     ",
+            "██║██║ ╚████║███████║   ██║   ██║  ██║███████╗███████╗",
+            "╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝"
             };
             Elements title_lines;
             for (size_t i = 0; i < ascii_title.size(); ++i) {
@@ -191,11 +251,11 @@ namespace Menus
                 createParticles(),
                 vbox(title_lines),
                 text("") | center,
-                text("INSTALLATION MENU") | ftxui::bold | color(Color::White) | center,
+                text("OPTIONS MENU") | ftxui::bold | color(Color::White) | center,
                 text("") | center,
-                text("Please confirm to start the installation process.") | color(Color::Yellow) | center,
+                text("Please select an installation option.") | color(Color::Yellow) | center,
                 text("") | center,
-                menu->Render() | center,
+                centered_menu->Render(),
                 text("") | center,
                 createStatusBar(),
             })
@@ -266,7 +326,7 @@ namespace Menus
         std::lock_guard<std::mutex> lock{progressMutex_};
         
         // Find the step and set it as current
-        for (size_t i = 0; i < steps_.size(); ++i) {
+        for (size_t i = 0; i < steps_.size(); i++) {
             if (i >= steps_.size()) continue; // Bounds check
             if (steps_[i].name == stepName) {
                 currentStepIndex_ = static_cast<int>(i);
@@ -283,7 +343,7 @@ namespace Menus
         
         for (auto& step : steps_) {
             if (step.name == parentStep) {
-                for (size_t i = 0; i < step.subSteps.size(); ++i) {
+                for (size_t i = 0; i < step.subSteps.size(); i++) {
                     if (i >= step.subSteps.size()) continue; // Bounds check
                     if (step.subSteps[i].name == subStep) {
                         step.currentSubStepIndex = static_cast<int>(i);
@@ -325,7 +385,19 @@ namespace Menus
 
     void InstallationMenu::StartInstallation()
     {
-        // Empty implementation for now
+        NOVA_LOG("Starting installation process!", LogType::Log);
+        
+        if (installationMethod_ == InstallationMethod::None) {
+            NOVA_LOG("No installation method selected!", LogType::Error);
+            SetError("No installation method selected, please choose one first.");
+            return;
+        }
+        
+        if (ExecuteInstallation()) {
+            NOVA_LOG("Installation executed successfully!", LogType::Log);
+        } else {
+            NOVA_LOG("Installation failed!", LogType::Error);
+        }
     }
 
     void InstallationMenu::ViewProgress()

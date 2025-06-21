@@ -1,12 +1,10 @@
 {
-    "cmdOptions": {
-        "clearContent": false,
-        "noRoot": true,
-        "verbose": true
-    },
-    "mkdocsProjectPath": "fidjflkdjsjdkfsf",
+    "clearContent": true,
+    "mkdocsProjectPath": "Rawr, I am a Dinosaur!",
+    "noRoot": true,
     "requestRootForBrew": true,
     "requestRootForPip": true,
     "requestRootForVenv": true,
-    "scrollableLogAlwaysVisible": true
+    "scrollableLogAlwaysVisible": false,
+    "verbose": false
 }

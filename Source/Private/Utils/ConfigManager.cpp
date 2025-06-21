@@ -23,9 +23,9 @@ namespace Utils
         CreateConfigDirectory();
         
         json j;
-        j["cmdOptions"]["clearContent"] = config.clearContent;
-        j["cmdOptions"]["noRoot"] = config.noRoot;
-        j["cmdOptions"]["verbose"] = config.verbose;
+        j["clearContent"] = config.clearContent;
+        j["noRoot"] = config.noRoot;
+        j["verbose"] = config.verbose;
         j["mkdocsProjectPath"] = config.mkdocsProjectPath;
         j["requestRootForBrew"] = config.requestRootForBrew;
         j["requestRootForPip"] = config.requestRootForPip;
@@ -56,7 +56,7 @@ namespace Utils
                 config.clearContent = j.value("clearContent", false);
                 config.noRoot = j.value("noRoot", false);
                 config.verbose = j.value("verbose", false);
-                config.mkdocsProjectPath = j.value("mkdocsProjectPath", "");
+                config.mkdocsProjectPath = j.value("mkdocsProjectPath", "Rawr, I am a Dinosaur!");
                 config.requestRootForBrew = j.value("requestRootForBrew", true);
                 config.requestRootForPip = j.value("requestRootForPip", true);
                 config.requestRootForVenv = j.value("requestRootForVenv", true);
@@ -67,7 +67,11 @@ namespace Utils
                 NOVA_LOG(("Failed to parse configuration: " + std::string(e.what())).c_str(), LogType::Warning);
             }
         } else {
-            NOVA_LOG("No existing configuration found, using defaults", LogType::Debug);
+            NOVA_LOG("No existing configuration found, recreating with default values", LogType::Warning);
+            // If no config file exists, recreate with default values
+            CommandLineOptionsStruct defaultConfig;
+            SaveConfig(defaultConfig);
+            config = defaultConfig; // Use default values
         }
         
         return config;

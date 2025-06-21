@@ -2,9 +2,33 @@
 #include "NovaMinimal.h"
 #include "NovaFileOperations.h"
 #include "NovaLog.h"
+#include <fstream>
+#include <thread>
+#include <chrono>
+#include <mutex>
+#include <random>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <algorithm>
 
 namespace Core::FileOperations 
 {
+    // Initialize static members
+    std::map<int, NovaFileOperations::DirectoryWatcher> NovaFileOperations::watchers;
+    std::mutex NovaFileOperations::watchersMutex;
+    int NovaFileOperations::nextWatcherId = 1;
+    
+    // FileInfo::GetFormattedTime implementation
+    std::string FileInfo::GetFormattedTime() const {
+        auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+            lastModified - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now()
+        );
+        auto tt = std::chrono::system_clock::to_time_t(sctp);
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&tt), "%Y-%m-%d %H:%M:%S");
+        return ss.str();
+    }
     std::string NovaFileOperations::NormalizePath(const std::string& path)
     {
         try {

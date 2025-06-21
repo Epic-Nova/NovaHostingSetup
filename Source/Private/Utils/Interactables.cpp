@@ -144,7 +144,7 @@ namespace Utils
                     }
                     NOVA_LOG_VERBOSE("BrewInstallHelper created successfully", LogType::Debug);
                     
-                    BrewInstallHelperPtr->SetInstallCallbackFunction([installMenu](const std::string& msg) {
+                    BrewInstallHelperPtr->SetInstallCallbackFunction("brew_progress", [installMenu](const std::string& msg) {
                         NOVA_LOG_VERBOSE(("Brew callback: " + msg).c_str(), LogType::Debug);
                         installMenu->UpdateProgress("Homebrew: " + msg);
                     });
@@ -190,7 +190,7 @@ namespace Utils
                     installMenu->SetCurrentSubStep("Check Python/Pip", "Initialize Pip Helper");
                     
                     PipInstallHelper* PipInstallHelperPtr = PipInstallHelper::CreatePlatformSpecific();
-                    PipInstallHelperPtr->SetInstallCallbackFunction([installMenu](const std::string& msg) {
+                    PipInstallHelperPtr->SetInstallCallbackFunction("pip_progress", [installMenu](const std::string& msg) {
                         installMenu->UpdateProgress("Pip: " + msg);
                     });
                     
@@ -244,7 +244,7 @@ namespace Utils
                         
                         if (!cmdOptions.noRoot) {
                             RootAccessHelper* RootAccessHelperPtr = RootAccessHelper::CreatePlatformSpecific();
-                            RootAccessHelperPtr->SetInstallCallbackFunction([installMenu](const std::string& msg) {
+                            RootAccessHelperPtr->SetInstallCallbackFunction("root_progress", [installMenu](const std::string& msg) {
                                 installMenu->UpdateProgress("Root: " + msg);
                             });
                             RootAccessHelperPtr->Initialize();
@@ -260,7 +260,7 @@ namespace Utils
                                 
                                 installMenu->SetCurrentSubStep("Create Virtual Environment", "Initialize virtual environment");
                                 
-                                if (RootAccessHelperPtr2->RunCommandWithElevatedPrivileges(venvCommand)) {
+                                if (RootAccessHelperPtr2->RunCommandWithElevatedPrivileges(venvCommand, [&](const std::string& msg) {
                                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                                     installMenu->CompleteCurrentSubStep();
                                     installMenu->CompleteCurrentStep();
@@ -272,7 +272,9 @@ namespace Utils
                                     std::string pipPath = venvPath + "/bin/pip";
                                     std::string mkdocsInstallCommand = pipPath + " install mkdocs mkdocs-material";
                                     
-                                    if (RootAccessHelperPtr2->RunCommandWithElevatedPrivileges(mkdocsInstallCommand)) {
+                                    if (RootAccessHelperPtr2->RunCommandWithElevatedPrivileges(mkdocsInstallCommand, [&](const std::string& msg) {
+                                        // Empty callback function
+                                    })) {
                                         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                                         installMenu->CompleteCurrentSubStep();
                                         installMenu->SetCurrentSubStep("Install Python Packages", "Install MkDocs Material");
@@ -286,12 +288,15 @@ namespace Utils
                                     } else {
                                         installMenu->SetError("Failed to install Python packages");
                                     }
+                                })) {
+                                    // Command succeeded
                                 } else {
                                     installMenu->SetError("Failed to create virtual environment");
                                 }
                                 
-                                return true;
+                                return true; // Return a boolean value for the Execute lambda
                             });
+                        
                         } else {
                             installMenu->SetCurrentSubStep("Create Virtual Environment", "Create venv directory");
                             std::this_thread::sleep_for(std::chrono::milliseconds(500));

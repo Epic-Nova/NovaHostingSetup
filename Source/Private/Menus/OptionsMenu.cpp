@@ -32,15 +32,16 @@ namespace Menus
                 options_.clearContent = configJson.value("clearContent", false);
                 options_.noRoot = configJson.value("noRoot", false);
                 options_.verbose = configJson.value("verbose", false);
-                options_.requestRootForBrew = configJson.value("requestRootForBrew", false);
-                options_.requestRootForPip = configJson.value("requestRootForPip", false);
-                options_.requestRootForVenv = configJson.value("requestRootForVenv", false);
+                options_.requestRootForBrew = configJson.value("requestRootForBrew", true);
+                options_.requestRootForPip = configJson.value("requestRootForPip", true);
+                options_.requestRootForVenv = configJson.value("requestRootForVenv", true);
                 options_.scrollableLogAlwaysVisible = configJson.value("scrollableLogAlwaysVisible", false);
-                options_.mkdocsProjectPath = configJson.value("mkdocsProjectPath", "");
+                options_.mkdocsProjectPath = configJson.value("mkdocsProjectPath", "I am a Diosaur, rawr!");
 
                 NOVA_LOG("Configuration loaded successfully.", LogType::Log);
             } else {
-                NOVA_LOG("Configuration file not found. Using default settings.", LogType::Warning);
+                NOVA_LOG("Configuration file not found, recreating default configuration.", LogType::Warning);
+                SaveConfig(); // Save default config if file doesn't exist
             }
         } catch (const std::exception& e) {
             NOVA_LOG(("Failed to load configuration: " + std::string(e.what())).c_str(), LogType::Error);
@@ -51,7 +52,7 @@ namespace Menus
     {
         NOVA_LOG("Saving configuration...", LogType::Log);
         try {
-            std::string configPath = std::filesystem::current_path().string() + "/Content/config.json";
+            std::string configPath = std::filesystem::current_path().string() + "/Config/app_config.json";
             nlohmann::json configJson;
 
             configJson["clearContent"] = options_.clearContent;
@@ -80,30 +81,25 @@ namespace Menus
         auto start_time = std::chrono::steady_clock::now();
         bool show_particles = true;
 
-        // Create styled checkbox
+        // Create styled checkbox with improved visual design and clickable labels
         auto makeStyledCheckbox = [&](const std::string& label, bool* value) {
-            auto checkbox = Checkbox(label, value);
-            return Renderer(checkbox, [=]() {
-                return hbox({
-                    text(" ") | size(WIDTH, EQUAL, 2),
-                    text(label) | ftxui::bold | color(Color::Yellow),
-                    text(" ") | size(WIDTH, EQUAL, 2),
-                }) | center;
+            // Use direct checkbox component to maintain interactivity
+            return Checkbox(label, value) | color(Color::Cyan);
+        };
+
+        // Styled input field with more compact centered content
+        auto makeStyledInput = [](const std::string& label, std::string* value) {
+            // Create a vertical container with the label and input to maintain interactivity
+            return Container::Vertical({
+                // Fix: Use direct text element for the label
+                Renderer([=] {
+                    return text(label) | ftxui::bold | color(Color::Yellow);
+                }),
+                Input(value, "") | border | size(WIDTH, LESS_THAN, 30)
             });
         };
 
-        // Create styled text box
-        auto makeStyledTextBox = [&](const std::string& label, std::string* value) {
-            auto input = Input(value);
-            return Renderer(input, [=]() {
-                return hbox({
-                    text(label + ": ") | ftxui::bold | color(Color::Yellow),
-                    input->Render() | size(WIDTH, GREATER_THAN, 35),
-                }) | center;
-            });
-        };
-
-        // Create checkboxes for boolean options
+        // Create checkboxes for boolean options with better styling
         auto clearContentCheckbox = makeStyledCheckbox("Clear Content", &options_.clearContent);
         auto noRootCheckbox = makeStyledCheckbox("No Root Access", &options_.noRoot);
         auto verboseCheckbox = makeStyledCheckbox("Verbose Mode", &options_.verbose);
@@ -112,76 +108,114 @@ namespace Menus
         auto requestRootForVenvCheckbox = makeStyledCheckbox("Request Root for Virtual Environment", &options_.requestRootForVenv);
         auto scrollableLogAlwaysVisibleCheckbox = makeStyledCheckbox("Scrollable Log Always Visible", &options_.scrollableLogAlwaysVisible);
 
-        // Create text box for string options
-        auto mkdocsProjectPathTextBox = makeStyledTextBox("MkDocs Project Path", &options_.mkdocsProjectPath);
+        // Create text box for string options with better styling
+        auto mkdocsProjectPathTextBox = makeStyledInput("MkDocs Project Path", &options_.mkdocsProjectPath);
 
-        // Back button
-        auto BackButton = Button("🔙 Back", [&]() { GetScreen().ExitLoopClosure()(); });
-
-        // Menu container
+        // Styled back button - centered properly
+        auto BackButton = Button("🔙 Save & Return to Main Menu", [&]() { 
+            SaveConfig(); // Save configuration before going back
+            GetScreen().ExitLoopClosure()(); 
+        });
+        
+        // Menu container with minimal spacing and two-column layout for options
         auto menu = Container::Vertical({
-            clearContentCheckbox,
-            noRootCheckbox,
-            verboseCheckbox,
-            requestRootForBrewCheckbox,
-            requestRootForPipCheckbox,
-            requestRootForVenvCheckbox,
-            scrollableLogAlwaysVisibleCheckbox,
+            // Create a two-column layout to save vertical space
+            Container::Horizontal({
+                Container::Vertical({
+                    clearContentCheckbox,
+                    noRootCheckbox,
+                    verboseCheckbox,
+                    requestRootForBrewCheckbox,
+                }),
+                Container::Vertical({
+                    requestRootForPipCheckbox,
+                    requestRootForVenvCheckbox,
+                    scrollableLogAlwaysVisibleCheckbox,
+                }),
+            }),
+            
+            // MkDocs path and back button
             mkdocsProjectPathTextBox,
-            BackButton,
+            Container::Horizontal({
+                Renderer([] { return text(" ") | flex; }),
+                BackButton,
+                Renderer([] { return text(" ") | flex; }),
+            }) | center,
         });
 
-        // Main component with animations
-        auto component = Renderer(menu, [=]() -> Element {
+        // Main component with animations - ultra compact for 65x35 space
+        auto component = Renderer(menu, [=, &start_time, &show_particles]() -> Element {
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
 
-            // Animated title
-            std::vector<std::string> ascii_title {
-                "  ██████╗ ███╗   ███╗ ██████╗ ████████╗██╗ ██████╗ ██╗   ██╗  ",
-                "  ██╔══██╗████╗ ████║██╔═══██╗╚══██╔══╝██║██╔═══██╗██║   ██║  ",
-                "  ██████╔╝██╔████╔██║██║   ██║   ██║   ██║██║   ██║██║   ██║  ",
-                "  ██╔═══╝ ██║╚██╔╝██║██║   ██║   ██║   ██║██║   ██║╚██╗ ██╔╝  ",
-                "  ██║     ██║ ╚═╝ ██║╚██████╔╝   ██║   ██║╚██████╔╝ ╚████╔╝   ",
-                "  ╚═╝     ╚═╝     ╚═╝ ╚═════╝    ╚═╝   ╚═╝ ╚═════╝   ╚═══╝    "
+            // Create animated rainbow colors
+            int color_cycle = (elapsed / 100) % 360;
+            auto get_rainbow_color = [&](int offset) -> Color {
+                int hue = (color_cycle + offset) % 360;
+                if (hue < 60) return Color::Red;
+                else if (hue < 120) return Color::Yellow; 
+                else if (hue < 180) return Color::Green;
+                else if (hue < 240) return Color::Cyan;
+                else if (hue < 300) return Color::Blue;
+                else return Color::Magenta;
             };
-            Elements title_lines;
-            for (size_t i = 0; i < ascii_title.size(); ++i) {
-                auto line_color = Color::Yellow;
-                title_lines.push_back(text(ascii_title[i]) | color(line_color) | center);
-            }
 
-            // Particle effect
+            // Ultra compact title - just one line
+            auto title = text("OPTIONS") | ftxui::bold | color(get_rainbow_color(0)) | center;
+
+            // Minimal particle effect
             auto createParticles = [&]() -> Element {
                 if (!show_particles) return text("");
-                Elements rows;
-                for (int y = 0; y < 2; ++y) {
-                    Elements row;
-                    for (int x = 0; x < 40; ++x) {
-                        auto val = (elapsed + x * 91 + y * 211) / 70 % 6;
-                        std::vector<std::string> stars{"✦", "✧", "❂", "❉", "✼", "⛧"};
-                        row.push_back(text(stars[val]) | color(Color::Yellow));
-                    }
-                    rows.push_back(hbox(row));
+                Elements particles;
+                for (int x = 0; x < 10; ++x) {
+                    auto particle_time = (elapsed + x * 111) / 50;
+                    auto char_idx = particle_time % 3;
+                    // Use string constructor to properly concatenate strings
+                    std::string particle_char = char_idx == 0 ? "· " : (char_idx == 1 ? "○ " : "✦ ");
+                    particles.push_back(text(particle_char) | color(get_rainbow_color(x * 30)));
                 }
-                return vbox(rows) | center | dim;
+                return hbox(particles) | center;
             };
 
+            // Complete layout with minimal elements - optimized for 65x35
             return vbox({
+                // Particle effect
                 createParticles(),
-                vbox(title_lines),
-                text("") | center,
-                text("OPTIONS MENU") | ftxui::bold | color(Color::White) | center,
-                text("") | center,
-                menu->Render() | center,
+                
+                // Compact title
+                hbox({
+                    text("[ "),
+                    title,
+                    text(" ]"),
+                }) | color(get_rainbow_color(90)) | center,
+                
+                // Menu content with minimal decoration
+                menu->Render() | border | color(get_rainbow_color(180)),
+                
+                // Footer with essential controls only
+                text("ESC:Back | P:Effects") | center | color(Color::Yellow),
             })
-            | size(WIDTH, EQUAL, 80)
-            | size(HEIGHT, EQUAL, 40)
-            | border
-            | center;
+            | size(WIDTH, EQUAL, 65)  // Width: 65
+            | size(HEIGHT, EQUAL, 35) // Height: reduced to 35
+            | border | center;
         });
 
-        GetScreen().Loop(component);
+        // Add keyboard handling for particle toggle and escape
+        auto enhanced_component = CatchEvent(component, [&](Event event) {
+            if (event == Event::Character('p') || event == Event::Character('P')) {
+                show_particles = !show_particles;
+                return true;
+            }
+            if (event == Event::Escape) {
+                SaveConfig(); // Save configuration when exiting with ESC
+                GetScreen().ExitLoopClosure()();
+                return true;
+            }
+            return false;
+        });
+
+        GetScreen().Loop(enhanced_component);
+        SaveConfig(); // Save configuration when closing the menu
     }
 
     void OptionsMenu::Hide()

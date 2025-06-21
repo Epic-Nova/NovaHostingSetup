@@ -1,5 +1,6 @@
 #include "UnitTests/UnitTestManager.h"
 #include "UnitTests/NovaFileOperationsTest.h"
+#include "UnitTests/NovaFileOperationsExtendedTest.h"
 #include "UnitTests/NovaLogTest.h"
 #include "UnitTests/BrewInstallHelperTest.h"
 #include "UnitTests/PipInstallHelperTest.h"
@@ -27,8 +28,8 @@ bool UnitTestManager::RunUnitTests() {
     // Unit test registry
     std::vector<std::unique_ptr<BaseUnitTest>> unitTests;
     unitTests.emplace_back(std::make_unique<NovaFileOperationsTest>());
+    unitTests.emplace_back(std::make_unique<NovaFileOperationsExtendedTest>());
     unitTests.emplace_back(std::make_unique<NovaLogTest>());
-    unitTests.emplace_back(std::make_unique<NovaFileOperationsTest>());
     unitTests.emplace_back(std::make_unique<BrewInstallHelperTest>());
     unitTests.emplace_back(std::make_unique<PipInstallHelperTest>());
     unitTests.emplace_back(std::make_unique<RootAccessHelperTest>());

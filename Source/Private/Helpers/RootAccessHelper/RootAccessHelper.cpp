@@ -38,17 +38,11 @@ namespace Core::Helpers
 
         return PlatformHelperInstance;
     }
-    void RootAccessHelper::Initialize()
+    bool RootAccessHelper::Initialize()
     {
         if (PlatformHelperInstance)
-        {
-            // Forward callbacks to platform-specific instance
-            for (const auto& callback : InstallCallbacks) {
-                PlatformHelperInstance->AddInstallCallback(callback);
-            }
-            
-            PlatformHelperInstance->Initialize();
-            bIsInitialized = true;
+        {      
+            return PlatformHelperInstance->Initialize();
         }
         else
         {
@@ -94,7 +88,8 @@ namespace Core::Helpers
             PlatformHelperInstance->Reset();
         }
         bIsRunning = false;
-        bIsAborted = false;
+        bIsInitialized = false;
+        bHasElevatedPrivileges = false;
     }
     void RootAccessHelper::Abort()
     {
@@ -102,7 +97,6 @@ namespace Core::Helpers
         {
             PlatformHelperInstance->Abort();
         }
-        bIsAborted = true;
         bIsRunning = false;
     }
 }
