@@ -1,5 +1,6 @@
 .vscode/
 Binaries/
+Content/Logs/*
 Intermediate/
 /.idea
 /.vscode
